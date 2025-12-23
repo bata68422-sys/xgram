@@ -1,0 +1,1266 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>XGram — Мессенджер</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Экран обслуживания -->
+    <div id="maintenance-screen" style="display:none">
+        <div class="maintenance-container">
+            <div class="maintenance-icon">🔧</div>
+            <h1>Техническое обслуживание</h1>
+            <p id="maintenance-text">Сайт на техническом обслуживании. Пожалуйста, подождите.</p>
+            <div class="maintenance-loader">
+                <div class="loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран авторизации -->
+    <div id="auth-screen">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <div class="logo-icon"><i class="fas fa-comments"></i></div>
+                <h1>XGram</h1>
+                <p>Общайся без границ</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
+            </div>
+            
+            <!-- Форма входа -->
+            <div id="login-form" class="auth-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="login-username" placeholder="Логин">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="login-password" placeholder="Пароль">
+                </div>
+                <button class="btn-primary" onclick="handleLogin()">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+            </div>
+            
+            <!-- Форма регистрации -->
+            <div id="register-form" class="auth-form" style="display:none">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="reg-username" placeholder="Логин (мин. 3 символа)">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-id-card"></i>
+                    <input type="text" id="reg-displayname" placeholder="Отображаемое имя">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="reg-password" placeholder="Пароль">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="reg-password2" placeholder="Повторите пароль">
+                </div>
+                <button class="btn-primary" onclick="handleRegister()">
+                    <i class="fas fa-user-plus"></i> Создать аккаунт
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основное приложение -->
+    <div id="app" style="display:none">
+        <!-- Верхняя панель -->
+        <div class="top-bar">
+            <div class="coins-display" onclick="openShop()">
+                <span class="coin-icon">🐱</span>
+                <span id="my-coins">0</span>
+            </div>
+            <button class="premium-btn" onclick="openPremiumModal()" title="Премиум">⭐</button>
+            <button class="chest-btn" onclick="openChest()" title="Ежедневный сундук">🎁</button>
+            <button class="market-btn" onclick="openMarket()" title="Рынок">🏪</button>
+            <button class="shop-btn" onclick="openShop()">
+                <i class="fas fa-store"></i> <span>Магазин</span>
+            </button>
+            <button class="admin-btn" id="admin-btn" onclick="openAdminPanel()" style="display:none">
+                <i class="fas fa-shield-alt"></i> <span>Админ</span>
+            </button>
+        </div>
+        
+        <!-- Боковая панель -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile" onclick="openSettings()">
+                    <div class="avatar-wrapper">
+                        <img id="my-avatar" src="" alt="Avatar">
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="my-name">Имя</span>
+                        <span class="user-status" id="my-status">Онлайн</span>
+                    </div>
+                </div>
+                <button class="icon-btn" onclick="openSettings()" title="Настройки">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            
+            <!-- Поиск -->
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Поиск людей..." oninput="handleSearch(this.value)">
+                <div id="search-results" class="search-results"></div>
+            </div>
+            
+            <!-- Заявки в друзья -->
+            <div id="friend-requests" class="friend-requests" style="display:none">
+                <div class="section-title">
+                    <i class="fas fa-user-plus"></i> Заявки в друзья
+                </div>
+                <div id="requests-list"></div>
+            </div>
+            
+            <!-- Список чатов -->
+            <div class="chats-list" id="chats-list">
+                <div class="empty-state" id="no-friends">
+                    <i class="fas fa-user-friends"></i>
+                    <p>Найдите друзей через поиск</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Основная область чата -->
+        <main class="chat-area" id="chat-area">
+            <!-- Пустое состояние -->
+            <div class="chat-empty" id="chat-empty">
+                <div class="empty-icon"><i class="fas fa-comments"></i></div>
+                <h2>Выберите чат</h2>
+                <p>Или найдите новых друзей через поиск</p>
+            </div>
+            
+            <!-- Активный чат -->
+            <div class="chat-active" id="chat-active">
+                <header class="chat-header">
+                    <button class="icon-btn mobile-back" onclick="closeChatMobile()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="chat-user-info" onclick="openUserProfile()">
+                        <img id="chat-avatar" src="" alt="">
+                        <div>
+                            <span class="chat-name" id="chat-name">Имя</span>
+                            <span class="chat-status" id="chat-status">Онлайн</span>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="icon-btn" onclick="startCall(false)" title="Аудиозвонок">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="icon-btn" onclick="startCall(true)" title="Видеозвонок">
+                            <i class="fas fa-video"></i>
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="messages-container" id="messages">
+                    <div class="typing-indicator" id="typing-indicator" style="display:none">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                
+                <footer class="chat-input-area">
+                    <button class="icon-btn" onclick="openMediaPicker()" title="Медиа">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openStickers()" title="Стикеры">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                    
+                    <!-- Раскрывающееся меню для ПК -->
+                    <div class="expand-menu-container pc-only" id="expand-menu-container">
+                        <button class="icon-btn expand-toggle-btn" id="expand-toggle-btn" onclick="toggleExpandMenu()" title="Ещё">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div class="expand-menu" id="expand-menu">
+                            <button class="expand-menu-item" onclick="openShop()" title="Магазин">
+                                <i class="fas fa-store"></i>
+                                <span>Магазин</span>
+                            </button>
+                            <button class="expand-menu-item" onclick="openMarket()" title="Рынок">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span>Рынок</span>
+                            </button>
+                            <button class="expand-menu-item" onclick="openGiftPicker()" title="Подарок">
+                                <i class="fas fa-gift"></i>
+                                <span>Подарок</span>
+                            </button>
+                            <button class="expand-menu-item" onclick="openNftPicker()" title="NFT">
+                                <i class="fas fa-image"></i>
+                                <span>NFT</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Мобильные кнопки -->
+                    <button class="icon-btn gift-chat-btn mobile-only" onclick="openGiftPicker()" title="Подарить">
+                        <i class="fas fa-gift"></i>
+                    </button>
+                    <button class="icon-btn nft-chat-btn mobile-only" onclick="openNftPicker()" title="Отправить NFT">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    
+                    <button class="icon-btn voice-btn" id="voice-btn" onclick="startVoiceRecord()" title="Голосовое">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <div class="message-input-wrapper">
+                        <textarea id="message-input" placeholder="Напишите сообщение..." 
+                               onkeypress="handleKeyPress(event)" oninput="handleTyping(); autoResizeTextarea(this)" rows="1"></textarea>
+                    </div>
+                    <button class="send-btn" onclick="sendMessage()" title="Отправить">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </footer></button>""
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content settings-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Настройки</h2>
+                <button class="icon-btn" onclick="closeModal('settings-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="settings-body">
+                <!-- Аватар -->
+                <div class="settings-section">
+                    <h3>Профиль</h3>
+                    <div class="avatar-edit">
+                        <div class="avatar-preview">
+                            <img id="settings-avatar" src="" alt="">
+                            <label class="avatar-upload">
+                                <i class="fas fa-camera"></i>
+                                <input type="file" accept="image/*" onchange="uploadAvatar(event)" hidden>
+                            </label>
+                        </div>
+                        <button class="btn-secondary" onclick="removeAvatar()">Удалить фото</button>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Отображаемое имя</label>
+                        <input type="text" id="settings-name" placeholder="Ваше имя">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Статус</label>
+                        <input type="text" id="settings-status" placeholder="Ваш статус">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Telegram</label>
+                        <input type="text" id="settings-telegram" placeholder="@username">
+                    </div>
+                </div>
+                
+                <!-- Премиум настройки -->
+                <div class="settings-section premium-settings" id="premium-settings" style="display:none">
+                    <h3>⭐ Премиум настройки</h3>
+                    
+                    <div class="input-group">
+                        <label>Эмодзи в нике</label>
+                        <div class="emoji-picker-mini">
+                            <input type="text" id="settings-emoji" placeholder="Выберите эмодзи" readonly>
+                            <div class="emoji-options" id="emoji-options">
+                                <span onclick="selectNickEmoji('')">❌</span>
+                                <span onclick="selectNickEmoji('⭐')">⭐</span>
+                                <span onclick="selectNickEmoji('👑')">👑</span>
+                                <span onclick="selectNickEmoji('💎')">💎</span>
+                                <span onclick="selectNickEmoji('🔥')">🔥</span>
+                                <span onclick="selectNickEmoji('💫')">💫</span>
+                                <span onclick="selectNickEmoji('✨')">✨</span>
+                                <span onclick="selectNickEmoji('🌟')">🌟</span>
+                                <span onclick="selectNickEmoji('🎭')">🎭</span>
+                                <span onclick="selectNickEmoji('🦋')">🦋</span>
+                                <span onclick="selectNickEmoji('🌸')">🌸</span>
+                                <span onclick="selectNickEmoji('🍀')">🍀</span>
+                                <span onclick="selectNickEmoji('🎪')">🎪</span>
+                                <span onclick="selectNickEmoji('🎯')">🎯</span>
+                                <span onclick="selectNickEmoji('🚀')">🚀</span>
+                                <span onclick="selectNickEmoji('💜')">💜</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Шрифт имени</label>
+                        <select id="settings-font" class="font-select">
+                            <option value="default">Обычный</option>
+                            <option value="bold">Жирный</option>
+                            <option value="italic">Курсив</option>
+                            <option value="fancy">Fancy</option>
+                            <option value="mono">Моноширинный</option>
+                            <option value="cursive">Рукописный</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Эффект профиля</label>
+                        <select id="settings-effect" class="effect-select">
+                            <option value="">Без эффекта</option>
+                            <option value="rainbow">🌈 Rainbow</option>
+                            <option value="neon">💚 Neon</option>
+                            <option value="fire">🔥 Fire</option>
+                            <option value="pulse">💜 Pulse</option>
+                            <option value="gold">👑 Gold</option>
+                            <option value="ice">❄️ Ice</option>
+                            <option value="toxic">☢️ Toxic</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Рамка профиля</label>
+                        <div class="frame-selector" id="frame-selector">
+                            <div class="frame-option" data-frame="" onclick="selectFrame('')">
+                                <div class="frame-preview no-frame">❌</div>
+                                <span>Нет</span>
+                            </div>
+                            <div class="frame-option" data-frame="gold" onclick="selectFrame('gold')">
+                                <div class="frame-preview frame-gold"></div>
+                                <span>Золото</span>
+                            </div>
+                            <div class="frame-option" data-frame="diamond" onclick="selectFrame('diamond')">
+                                <div class="frame-preview frame-diamond"></div>
+                                <span>Алмаз</span>
+                            </div>
+                            <div class="frame-option" data-frame="rainbow" onclick="selectFrame('rainbow')">
+                                <div class="frame-preview frame-rainbow"></div>
+                                <span>Радуга</span>
+                            </div>
+                            <div class="frame-option" data-frame="neon" onclick="selectFrame('neon')">
+                                <div class="frame-preview frame-neon"></div>
+                                <span>Неон</span>
+                            </div>
+                            <div class="frame-option" data-frame="fire" onclick="selectFrame('fire')">
+                                <div class="frame-preview frame-fire"></div>
+                                <span>Огонь</span>
+                            </div>
+                            <div class="frame-option" data-frame="custom" onclick="selectFrame('custom')">
+                                <div class="frame-preview frame-custom">🎨</div>
+                                <span>Своя</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group custom-frame-editor" id="custom-frame-editor" style="display:none">
+                        <label>Настройка своей рамки</label>
+                        <div class="custom-frame-colors">
+                            <input type="color" id="frame-color-1" value="#ff0000" title="Цвет 1">
+                            <input type="color" id="frame-color-2" value="#00ff00" title="Цвет 2">
+                            <input type="number" id="frame-width" value="3" min="1" max="10" title="Толщина">
+                            <select id="frame-style">
+                                <option value="solid">Сплошная</option>
+                                <option value="gradient">Градиент</option>
+                                <option value="animated">Анимация</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>NFT/Подарок в нике</label>
+                        <select id="settings-nick-item" class="nick-item-select">
+                            <option value="">Не выбрано</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Тема -->
+                <div class="settings-section">
+                    <h3>Оформление</h3>
+                    <div class="theme-selector">
+                        <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')">
+                            <div class="theme-preview dark-preview"></div>
+                            <span>Тёмная</span>
+                        </div>
+                        <div class="theme-option" data-theme="light" onclick="selectTheme('light')">
+                            <div class="theme-preview light-preview"></div>
+                            <span>Светлая</span>
+                        </div>
+                        <div class="theme-option" data-theme="purple" onclick="selectTheme('purple')">
+                            <div class="theme-preview purple-preview"></div>
+                            <span>Фиолетовая</span>
+                        </div>
+                        <div class="theme-option" data-theme="ocean" onclick="selectTheme('ocean')">
+                            <div class="theme-preview ocean-preview"></div>
+                            <span>Океан</span>
+                        </div>
+                        <div class="theme-option" data-theme="sunset" onclick="selectTheme('sunset')">
+                            <div class="theme-preview" style="background: linear-gradient(135deg, #ff6b6b, #2d1515);"></div>
+                            <span>Закат</span>
+                        </div>
+                        <div class="theme-option" data-theme="forest" onclick="selectTheme('forest')">
+                            <div class="theme-preview" style="background: linear-gradient(135deg, #4ade80, #0a1a0a);"></div>
+                            <span>Лес</span>
+                        </div>
+                        <div class="theme-option" data-theme="neon" onclick="selectTheme('neon')">
+                            <div class="theme-preview" style="background: linear-gradient(135deg, #00ffff, #0a0a14);"></div>
+                            <span>Неон</span>
+                        </div>
+                        <div class="theme-option" data-theme="sakura" onclick="selectTheme('sakura')">
+                            <div class="theme-preview" style="background: linear-gradient(135deg, #ff69b4, #1a0f14);"></div>
+                            <span>Сакура</span>
+                        </div>
+                        <div class="theme-option" data-theme="cyberpunk" onclick="selectTheme('cyberpunk')">
+                            <div class="theme-preview" style="background: linear-gradient(135deg, #f72585, #0d0d0d);"></div>
+                            <span>Киберпанк</span>
+                        </div>
+                        <div class="theme-option" data-theme="custom" onclick="selectTheme('custom')">
+                            <div class="theme-preview custom-preview"><i class="fas fa-palette"></i></div>
+                            <span>Своя</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Редактор кастомной темы -->
+                    <div id="custom-theme-editor" class="custom-theme-editor" style="display:none">
+                        <h4><i class="fas fa-paint-brush"></i> Настройка темы</h4>
+                        <div class="color-grid">
+                            <div class="color-input">
+                                <label>Фон</label>
+                                <input type="color" id="custom-bg" value="#0a0a0f">
+                            </div>
+                            <div class="color-input">
+                                <label>Карточки</label>
+                                <input type="color" id="custom-secondary" value="#12121a">
+                            </div>
+                            <div class="color-input">
+                                <label>Акцент</label>
+                                <input type="color" id="custom-accent" value="#6366f1">
+                            </div>
+                            <div class="color-input">
+                                <label>Текст</label>
+                                <input type="color" id="custom-text" value="#ffffff">
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="applyCustomTheme()">
+                            <i class="fas fa-check"></i> Применить
+                        </button>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" onclick="saveSettings()">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                
+                <button class="btn-danger" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </button>
+                
+                <button class="btn-danger-outline" onclick="openDeleteAccount()">
+                    <i class="fas fa-trash"></i> Удалить аккаунт
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно стикеров -->
+    <div class="modal" id="stickers-modal">
+        <div class="modal-content stickers-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-smile"></i> Стикеры</h2>
+                <button class="icon-btn" onclick="closeModal('stickers-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="stickers-grid" id="stickers-grid"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно медиа -->
+    <div class="modal" id="media-modal">
+        <div class="modal-content media-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-photo-video"></i> Отправить</h2>
+                <button class="icon-btn" onclick="closeModal('media-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="media-options">
+                <label class="media-option">
+                    <i class="fas fa-image"></i>
+                    <span>Фото</span>
+                    <input type="file" accept="image/*" onchange="sendMedia(event, 'image')" hidden>
+                </label>
+                <label class="media-option">
+                    <i class="fas fa-video"></i>
+                    <span>Видео</span>
+                    <input type="file" accept="video/*" onchange="sendMedia(event, 'video')" hidden>
+                </label>
+                <label class="media-option">
+                    <i class="fas fa-music"></i>
+                    <span>Аудио</span>
+                    <input type="file" accept="audio/*" onchange="sendMedia(event, 'audio')" hidden>
+                </label>
+                <label class="media-option">
+                    <i class="fas fa-file"></i>
+                    <span>Документ</span>
+                    <input type="file" onchange="sendMedia(event, 'file')" hidden>
+                </label>
+            </div>
+        </div>
+    </div>div>
+
+    <!-- Экран звонка -->
+    <div class="call-screen" id="call-screen">
+        <div class="call-bg"></div>
+        <div class="call-content">
+            <img id="call-avatar" src="" alt="" class="call-avatar">
+            <h2 id="call-name">Имя</h2>
+            <p id="call-status-text">Звоним...</p>
+            
+            <video id="remote-video" autoplay playsinline></video>
+            <video id="local-video" autoplay playsinline muted></video>
+            <audio id="remote-audio" autoplay></audio>
+            
+            <div class="call-controls">
+                <button class="call-btn mute-btn" id="mute-btn" onclick="toggleMute()">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="call-btn screen-btn" id="screen-btn" onclick="toggleScreenShare()">
+                    <i class="fas fa-desktop"></i>
+                </button>
+                <button class="call-btn end-btn" onclick="endCall()">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <button class="call-btn video-btn" id="video-btn" onclick="toggleVideo()" style="display:none">
+                    <i class="fas fa-video"></i>
+                </button>
+            </div>
+            
+            <div class="incoming-controls" id="incoming-controls" style="display:none">
+                <button class="call-btn reject-btn" onclick="rejectCall()">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <button class="call-btn accept-btn" onclick="acceptCall()">
+                    <i class="fas fa-phone"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Просмотр медиа -->
+    <div class="media-viewer" id="media-viewer" onclick="closeMediaViewer()">
+        <button class="close-viewer"><i class="fas fa-times"></i></button>
+        <img id="viewer-image" src="" alt="">
+        <video id="viewer-video" controls></video>
+    </div>
+
+    <!-- Модальное окно магазина -->
+    <div class="modal" id="shop-modal">
+        <div class="modal-content shop-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-store"></i> Магазин</h2>
+                <div class="shop-balance">
+                    <span class="coin-icon">🐱</span>
+                    <span id="shop-coins">0</span> котиков
+                </div>
+                <button class="icon-btn" onclick="closeModal('shop-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="shop-tabs">
+                <button class="shop-tab active" onclick="switchShopTab('gifts')">🎁 Подарки</button>
+                <button class="shop-tab" onclick="switchShopTab('nfts')">🖼 NFT</button>
+                <button class="shop-tab" onclick="switchShopTab('my')">📦 Мои</button>
+                <button class="shop-tab create-nft-tab" id="create-nft-tab" onclick="openCreateNft()" style="display:none">✨ Создать</button>
+            </div>
+            
+            <div id="shop-gifts" class="shop-grid"></div>
+            <div id="shop-nfts" class="shop-grid" style="display:none"></div>
+            <div id="shop-my" class="shop-my" style="display:none">
+                <h3>Мои подарки</h3>
+                <div id="my-gifts-list" class="my-items-grid"></div>
+                <h3>Мои NFT</h3>
+                <div id="my-nfts-list" class="my-items-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно админ-панели -->
+    <div class="modal" id="admin-modal">
+        <div class="modal-content admin-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Админ-панель</h2>
+                <button class="icon-btn" onclick="closeModal('admin-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="admin-body">
+                <div class="admin-section">
+                    <h3>Пользователи</h3>
+                    <div class="admin-search">
+                        <input type="text" id="admin-search" placeholder="Поиск пользователя..." oninput="filterAdminUsers(this.value)">
+                    </div>
+                    <div id="admin-users-list" class="admin-users-list"></div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>Быстрые действия</h3>
+                    <div class="admin-quick-actions">
+                        <div class="input-group">
+                            <label>Выдать котики</label>
+                            <input type="text" id="admin-coins-user" placeholder="Логин">
+                            <input type="number" id="admin-coins-amount" placeholder="Количество" value="100">
+                            <button class="btn-primary" onclick="adminAddCoins()">
+                                <i class="fas fa-coins"></i> Выдать
+                            </button>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Подарить подарок</label>
+                            <input type="text" id="admin-gift-user" placeholder="Логин">
+                            <select id="admin-gift-select"></select>
+                            <button class="btn-primary" onclick="adminGiftUser()">
+                                <i class="fas fa-gift"></i> Подарить
+                            </button>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Подарить NFT</label>
+                            <input type="text" id="admin-nft-user" placeholder="Логин">
+                            <select id="admin-nft-select"></select>
+                            <button class="btn-primary" onclick="adminGiftNFT()">
+                                <i class="fas fa-image"></i> Подарить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>Магазин</h3>
+                    <div class="admin-shop-actions">
+                        <button class="btn-secondary" onclick="openAddShopNft()">
+                            <i class="fas fa-plus"></i> Добавить NFT
+                        </button>
+                        <button class="btn-secondary" onclick="openAddShopGift()">
+                            <i class="fas fa-gift"></i> Добавить подарок
+                        </button>
+                        <button class="btn-secondary" onclick="openEditPrices()">
+                            <i class="fas fa-edit"></i> Редактировать цены
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>⭐ Премиум</h3>
+                    <div class="input-group">
+                        <input type="text" id="admin-premium-user" placeholder="Логин пользователя">
+                        <button class="btn-primary" onclick="adminGivePremium()">
+                            <i class="fas fa-star"></i> Выдать премиум
+                        </button>
+                        <button class="btn-danger" onclick="adminRemovePremium()">
+                            <i class="fas fa-times"></i> Забрать премиум
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="admin-section">
+                    <h3>📢 Глобальное сообщение</h3>
+                    <div class="input-group">
+                        <input type="text" id="global-message-text" placeholder="Сообщение для всех пользователей...">
+                        <button class="btn-primary" onclick="sendGlobalMessage()">
+                            <i class="fas fa-bullhorn"></i> Отправить всем
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- ADMIN ABUSE -->
+                <div class="admin-section admin-abuse">
+                    <h3>🔥 ADMIN ABUSE</h3>
+                    <div class="admin-abuse-grid">
+                        <button class="btn-abuse rainbow" onclick="adminAbuseRainbow()">
+                            🌈 Rainbow всем
+                        </button>
+                        <button class="btn-abuse" onclick="adminAbuseGlobalCoins()">
+                            🐱 Котики всем
+                        </button>
+                        <button class="btn-abuse" onclick="adminAbuseGlobalNft()">
+                            🖼 NFT всем
+                        </button>
+                        <button class="btn-abuse" onclick="adminAbuseGlobalGift()">
+                            🎁 Подарок всем
+                        </button>
+                        <button class="btn-abuse" onclick="adminAbuseGlobalEffect()">
+                            ✨ Эффект всем
+                        </button>
+                        <button class="btn-abuse screamer" onclick="adminAbuseScreamer()">
+                            👻 Скример всем
+                        </button>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Количество котиков для всех</label>
+                        <input type="number" id="abuse-coins-amount" value="1000" min="1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>NFT для всех</label>
+                        <select id="abuse-nft-select"></select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Подарок для всех</label>
+                        <select id="abuse-gift-select"></select>
+                    </div>
+                </div>
+                
+                <!-- Режим обслуживания -->
+                <div class="admin-section">
+                    <h3>🔧 Режим обслуживания</h3>
+                    <div class="maintenance-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="maintenance-toggle" onchange="toggleMaintenance()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span id="maintenance-status">Выключен</span>
+                    </div>
+                    <div class="input-group">
+                        <label>Сообщение при обслуживании</label>
+                        <input type="text" id="maintenance-message" placeholder="Сайт на техническом обслуживании..." value="Сайт на техническом обслуживании. Пожалуйста, подождите.">
+                    </div>
+                </div>
+                
+                <!-- Глобальная тема -->
+                <div class="admin-section">
+                    <h3>🌍 Глобальная тема</h3>
+                    <div class="global-theme-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="earth-theme-toggle" onchange="toggleEarthTheme()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Earth тема для всех</span>
+                    </div>
+                </div>
+                
+                <!-- Кастомные редкости -->
+                <div class="admin-section">
+                    <h3>💎 Кастомные редкости</h3>
+                    <div class="input-group">
+                        <input type="text" id="custom-rarity-name" placeholder="Название редкости">
+                        <input type="color" id="custom-rarity-color" value="#ff00ff">
+                        <select id="custom-rarity-effect">
+                            <option value="none">Без эффекта</option>
+                            <option value="glow">Свечение</option>
+                            <option value="pulse">Пульсация</option>
+                            <option value="rainbow">Радуга</option>
+                            <option value="neon">Неон</option>
+                        </select>
+                        <button class="btn-primary" onclick="addCustomRarity()">
+                            <i class="fas fa-plus"></i> Добавить
+                        </button>
+                    </div>
+                    <div id="custom-rarities-list" class="custom-rarities-list"></div>
+                </div>
+                
+                <!-- Автоповышение цен -->
+                <div class="admin-section">
+                    <h3>📈 Автоповышение цен</h3>
+                    <div class="price-increase-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="price-increase-toggle" onchange="togglePriceIncrease()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Повышать цены каждые 10 минут</span>
+                    </div>
+                    <div class="input-group">
+                        <label>Процент повышения</label>
+                        <input type="number" id="price-increase-percent" value="5" min="1" max="100">
+                        <span>%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление о подарке -->
+    <div class="gift-notification" id="gift-notification">
+        <div class="gift-notification-content">
+            <div class="gift-emoji" id="gift-emoji">🎁</div>
+            <div class="gift-text">
+                <span id="gift-from">Кто-то</span> подарил вам
+                <span id="gift-name">подарок</span>!
+            </div>
+        </div>
+    </div>
+
+    <!-- Профиль пользователя -->
+    <div class="modal" id="user-profile-modal">
+        <div class="modal-content profile-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user"></i> Профиль</h2>
+                <button class="icon-btn" onclick="closeModal('user-profile-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="profile-body">
+                <div class="profile-header">
+                    <img id="profile-avatar" src="" alt="" class="profile-avatar">
+                    <div class="profile-info">
+                        <h3 id="profile-name">Имя</h3>
+                        <span id="profile-username">@username</span>
+                        <span id="profile-status-text" class="profile-status"></span>
+                    </div>
+                </div>
+                <div class="profile-stats">
+                    <div class="stat"><span id="profile-friends">0</span> друзей</div>
+                    <div class="stat"><span id="profile-gifts-count">0</span> подарков</div>
+                    <div class="stat"><span id="profile-nfts-count">0</span> NFT</div>
+                </div>
+                <div id="profile-telegram" class="profile-telegram" style="display:none">
+                    <i class="fab fa-telegram"></i> <a id="profile-tg-link" href="" target="_blank"></a>
+                </div>
+                <div class="profile-gifts-preview">
+                    <h4>Подарки</h4>
+                    <div id="profile-gifts-list" class="profile-gifts-grid"></div>
+                </div>
+                <div class="profile-nfts-preview">
+                    <h4>NFT</h4>
+                    <div id="profile-nfts-list" class="profile-nfts-grid"></div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-primary" id="profile-add-btn" onclick="addFriendFromProfile()">
+                        <i class="fas fa-user-plus"></i> Добавить
+                    </button>
+                    <button class="btn-secondary" onclick="closeModal('user-profile-modal')">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ежедневный сундук -->
+    <div class="modal" id="chest-modal">
+        <div class="modal-content chest-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-treasure-chest"></i> 🎁 Ежедневный сундук</h2>
+                <button class="icon-btn" onclick="closeModal('chest-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chest-body">
+                <div class="chest-icon">🎁</div>
+                <p>Открывай сундук каждый день и получай подарки!</p>
+                <button class="btn-primary chest-open-btn" onclick="claimDailyChest()">
+                    <i class="fas fa-box-open"></i> Открыть сундук
+                </button>
+                <div id="chest-result" class="chest-result" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Рынок -->h2></div>
+    <div class="modal" id="market-modal">
+        <div class="modal-content market-content">
+            <div class="modal-header">
+                <h2>🏪 Рынок</h2>
+                <button class="icon-btn" onclick="closeModal('market-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="market-tabs">
+                <button class="market-tab active" onclick="switchMarketTab('buy')">Купить</button>
+                <button class="market-tab" onclick="switchMarketTab('sell')">Продать</button>
+                <button class="market-tab" onclick="switchMarketTab('my')">Мои лоты</button>
+            </div>
+            <div id="market-buy" class="market-grid"></div>
+            <div id="market-sell" class="market-sell" style="display:none">
+                <h4>Выберите предмет для продажи:</h4>
+                <div id="market-sell-gifts" class="market-sell-items"></div>
+                <div id="market-sell-nfts" class="market-sell-items"></div>
+            </div>
+            <div id="market-my" class="market-my-listings" style="display:none"></div>
+            <p class="market-hint">Комиссия: 10% от продажи</p>
+        </div>
+    </div>
+
+    <!-- Выставить на продажу -->
+    <div class="modal" id="list-item-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💰 Выставить на продажу</h2>
+                <button class="icon-btn" onclick="closeModal('list-item-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="list-item-body">
+                <div id="list-item-preview" class="list-item-preview"></div>
+                <div class="input-group">
+                    <label>Цена (котики)</label>
+                    <input type="number" id="list-item-price" placeholder="100" min="1">
+                </div>
+                <p class="list-hint">Вы получите: <span id="list-earnings">0</span> 🐱 (после комиссии 10%)</p>
+                <button class="btn-primary" onclick="confirmListItem()">
+                    <i class="fas fa-tag"></i> Выставить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно выбора подарка для отправки -->
+    <div class="modal" id="gift-picker-modal">
+        <div class="modal-content gift-picker-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-gift"></i> Подарить</h2>
+                <button class="icon-btn" onclick="closeModal('gift-picker-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="gift-picker-list" class="gift-picker-grid"></div>
+            <p class="gift-picker-hint">Выберите подарок из вашей коллекции</p>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания NFT (для админов) -->
+    <div class="modal" id="create-nft-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-magic"></i> Создать NFT</h2>
+                <button class="icon-btn" onclick="closeModal('create-nft-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-nft-body">
+                <div class="nft-preview-container">
+                    <img id="nft-preview-img" src="" alt="Preview" style="display:none">
+                    <div id="nft-preview-placeholder">
+                        <i class="fas fa-image"></i>
+                        <span>Выберите изображение</span>
+                    </div>
+                </div>
+                <label class="upload-nft-btn">
+                    <i class="fas fa-upload"></i> Загрузить фото
+                    <input type="file" accept="image/*" onchange="previewNftImage(event)" hidden>
+                </label>
+                <div class="input-group">
+                    <label>Название NFT</label>
+                    <input type="text" id="custom-nft-name" placeholder="Мой крутой NFT">
+                </div>
+                <button class="btn-primary" onclick="createCustomNft()">
+                    <i class="fas fa-plus"></i> Создать NFT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Выбор NFT для отправки -->
+    <div class="modal" id="nft-picker-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-image"></i> Отправить NFT</h2>
+                <button class="icon-btn" onclick="closeModal('nft-picker-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="nft-picker-list" class="nft-picker-grid"></div>
+        </div>
+    </div>
+
+    <!-- Админ: Добавить NFT в магазин -->
+    <div class="modal" id="add-shop-nft-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Добавить NFT в магазин</h2>
+                <button class="icon-btn" onclick="closeModal('add-shop-nft-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="admin-add-nft-body">
+                <div class="input-group">
+                    <label>Название</label>
+                    <input type="text" id="shop-nft-name" placeholder="Крутой NFT">
+                </div>
+                <div class="input-group">
+                    <label>Картинка</label>
+                    <div class="image-upload-box">
+                        <img id="shop-nft-preview" src="" style="display:none; max-width:100px; max-height:100px; border-radius:8px;">
+                        <input type="text" id="shop-nft-image" placeholder="🎨 эмодзи или URL">
+                        <label class="upload-btn">
+                            <i class="fas fa-upload"></i> Загрузить фото
+                            <input type="file" accept="image/*" onchange="previewNftImage(event)" hidden>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Цена (котики)</label>
+                    <input type="number" id="shop-nft-price" value="100" min="1">
+                </div>
+                <div class="input-group">
+                    <label>Количество (-1 = безлимит)</label>
+                    <input type="number" id="shop-nft-quantity" value="-1">
+                </div>
+                <div class="input-group">
+                    <label>Редкость</label>
+                    <select id="shop-nft-rarity">
+                        <option value="common">Common</option>
+                        <option value="uncommon">Uncommon</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                    </select>
+                </div>
+                <div class="input-group checkbox-group">
+                    <input type="checkbox" id="shop-nft-upgradeable">
+                    <label for="shop-nft-upgradeable">Можно улучшать</label>
+                </div>
+                <div class="input-group checkbox-group">
+                    <input type="checkbox" id="shop-nft-premium">
+                    <label for="shop-nft-premium">⭐ Только для премиум</label>
+                </div>
+                <button class="btn-primary" onclick="addShopNft()">
+                    <i class="fas fa-plus"></i> Добавить в магазин
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Админ: Добавить подарок в магазин -->
+    <div class="modal" id="add-shop-gift-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-gift"></i> Добавить подарок</h2>
+                <button class="icon-btn" onclick="closeModal('add-shop-gift-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="admin-add-gift-body">
+                <div class="input-group">
+                    <label>Название</label>
+                    <input type="text" id="shop-gift-name" placeholder="Крутой подарок">
+                </div>
+                <div class="input-group">
+                    <label>Эмодзи</label>
+                    <input type="text" id="shop-gift-emoji" placeholder="🎁" maxlength="4">
+                </div>
+                <div class="input-group">
+                    <label>Картинка (опционально)</label>
+                    <div class="image-upload-box">
+                        <img id="shop-gift-preview" src="" style="display:none; max-width:80px; max-height:80px; border-radius:8px;">
+                        <label class="upload-btn">
+                            <i class="fas fa-upload"></i> Загрузить
+                            <input type="file" accept="image/*" onchange="previewGiftImage(event)" hidden>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Редкость</label>
+                    <select id="shop-gift-rarity">
+                        <option value="common">Common (Обычный)</option>
+                        <option value="uncommon">Uncommon (Необычный)</option>
+                        <option value="rare">Rare (Редкий)</option>
+                        <option value="epic">Epic (Эпический)</option>
+                        <option value="legendary">Legendary (Легендарный)</option>
+                        <option value="neon">Neon (Неоновый)</option>
+                        <option value="rainbow">Rainbow (Радужный)</option>
+                        <option value="mythic">Mythic (Мифический)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Цена (котики)</label>
+                    <input type="number" id="shop-gift-price" value="50" min="1">
+                </div>
+                <button class="btn-primary" onclick="addShopGift()">
+                    <i class="fas fa-plus"></i> Добавить подарок
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Админ: Редактировать цены -->
+    <div class="modal" id="edit-prices-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Редактировать цены</h2>
+                <button class="icon-btn" onclick="closeModal('edit-prices-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="edit-prices-list" class="edit-prices-body"></div>
+        </div>
+    </div>
+
+    <!-- Добавить участника в группу -->
+    <div class="modal" id="add-member-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Добавить участника</h2>
+                <button class="icon-btn" onclick="closeModal('add-member-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="add-member-body">
+                <div class="input-group">
+                    <label>Логин пользователя</label>
+                    <input type="text" id="add-member-username" placeholder="username">
+                </div>
+                <button class="btn-primary" onclick="addMemberToGroup()">
+                    <i class="fas fa-plus"></i> Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Удаление аккаунта -->
+    <div class="modal" id="delete-account-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Удаление аккаунта</h2>
+                <button class="icon-btn" onclick="closeModal('delete-account-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="delete-account-body">
+                <p class="warning-text">⚠️ Это действие необратимо! Все ваши данные, подарки и NFT будут удалены.</p>
+                <div class="input-group">
+                    <label>Введите пароль для подтверждения</label>
+                    <input type="password" id="delete-account-password" placeholder="Ваш пароль">
+                </div>
+                <button class="btn-danger" onclick="confirmDeleteAccount()">
+                    <i class="fas fa-trash"></i> Удалить навсегда
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Создание группы/канала -->
+    <div class="modal" id="create-group-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-users"></i> Создать</h2>
+                <button class="icon-btn" onclick="closeModal('create-group-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-group-body">
+                <div class="type-tabs">
+                    <button class="type-tab active" onclick="switchCreateType('group')">👥 Группа</button>
+                    <button class="type-tab" onclick="switchCreateType('channel')">📢 Канал</button>
+                </div>
+                <div class="input-group">
+                    <label>Название</label>
+                    <input type="text" id="create-group-name" placeholder="Название...">
+                </div>
+                <button class="btn-primary" onclick="createGroup()">
+                    <i class="fas fa-plus"></i> Создать
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Создание канала -->
+    <div class="modal" id="create-channel-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-bullhorn"></i> Создать канал</h2>
+                <button class="icon-btn" onclick="closeModal('create-channel-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-channel-body">
+                <div class="input-group">
+                    <label>Название канала</label>
+                    <input type="text" id="create-channel-name" placeholder="Мой канал">
+                </div>
+                <button class="btn-primary" onclick="createChannel()">
+                    <i class="fas fa-plus"></i> Создать
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скример -->
+    <div class="modal" id="screamer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-ghost"></i> Отправить скример</h2>
+                <button class="icon-btn" onclick="closeModal('screamer-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="screamer-body">
+                <div class="input-group">
+                    <label>Картинка скримера</label>
+                    <div class="image-upload-box">
+                        <img id="screamer-image-preview" src="" style="display:none; max-width:100px; max-height:100px; border-radius:8px;">
+                        <label class="upload-btn">
+                            <i class="fas fa-image"></i> Выбрать картинку
+                            <input type="file" accept="image/*" onchange="previewScreamerImage(event)" hidden>
+                        </label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Звук скримера</label>
+                    <div class="audio-upload-box">
+                        <audio id="screamer-audio-preview" controls style="display:none; width:100%;"></audio>
+                        <label class="upload-btn">
+                            <i class="fas fa-music"></i> Выбрать звук
+                            <input type="file" accept="audio/*" onchange="previewScreamerSound(event)" hidden>
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-danger" onclick="sendScreamer()">
+                    <i class="fas fa-ghost"></i> Отправить скример
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скример оверлей -->
+    <div class="screamer-overlay" id="screamer-overlay" onclick="closeScreamer()">
+        <img id="screamer-display-image" src="" alt="">
+        <audio id="screamer-display-audio" autoplay></audio>
+    </div>
+
+    <!-- Премиум модальное окно -->
+    <div class="modal" id="premium-modal">
+        <div class="modal-content premium-content">
+            <div class="modal-header">
+                <h2>⭐ Премиум</h2>
+                <button class="icon-btn" onclick="closeModal('premium-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="premium-body">
+                <div class="premium-icon">⭐</div>
+                <h3>Станьте премиум пользователем!</h3>
+                <div class="premium-features">
+                    <div class="premium-feature">✨ Эмодзи и шрифт в нике</div>
+                    <div class="premium-feature">🎨 Эксклюзивные темы</div>
+                    <div class="premium-feature">📦 Двойной ежедневный сундук</div>
+                    <div class="premium-feature">💰 -10% комиссия на рынке</div>
+                    <div class="premium-feature">👻 Отправка скримеров</div>
+                    <div class="premium-feature">🎁 Эксклюзивные подарки</div>
+                    <div class="premium-feature">🖼 Эксклюзивные NFT</div>
+                    <div class="premium-feature">🌈 Rainbow/Neon эффекты</div>
+                </div>
+                <div class="premium-price">
+                    <span class="coin-icon">🐱</span> 1000 котиков
+                </div>
+                <button class="btn-premium" ontouchstart="buyPremium()" onclick="buyPremium()">
+                    ⭐ Купить премиум
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js"></script>
+</body>
+</html>
