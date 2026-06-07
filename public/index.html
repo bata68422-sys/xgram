@@ -886,6 +886,23 @@
                         <span>%</span>
                     </div>
                 </div>
+                
+                <!-- Открыть сайт у пользователя -->
+                <div class="admin-section">
+                    <h3>🌐 Открыть сайт у пользователя</h3>
+                    <div class="input-group">
+                        <select id="admin-open-site-user" class="user-select">
+                            <option value="">Выберите пользователя</option>
+                        </select>
+                        <input type="text" id="admin-open-site-url" placeholder="https://example.com">
+                        <button class="btn-primary" onclick="adminOpenSiteForUser()">
+                            <i class="fas fa-external-link-alt"></i> Открыть
+                        </button>
+                    </div>
+                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+                        * Сайт откроется только если пользователь онлайн
+                    </small>
+                </div>
             </div>
         </div>
     </div>
