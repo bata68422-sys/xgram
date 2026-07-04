@@ -1,1562 +1,358 @@
-﻿<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>XGram — Мессенджер</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="calls.js" defer></script>
-    <script src="app.js" defer></script>
-</head>
-<body>
-    <!-- Экран обслуживания -->
-    <div id="maintenance-screen" style="display:none">
-        <div class="maintenance-container">
-            <div class="maintenance-icon">🔧</div>
-            <h1>Техническое обслуживание</h1>
-            <p id="maintenance-text">Сайт на техническом обслуживании. Пожалуйста, подождите.</p>
-            <div class="maintenance-loader">
-                <div class="loader-bar"></div>
-            </div>
-        </div>
-    </div>
+﻿<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chat</title><style>:root { --bg: #1a1a2e; --surface: #16213e; --sidebar: #0f3460; --text: #e0e0e0; --text2: #a0a0a0; --accent: #e94560; --msg-own: #e94560; --msg-other: #1a1a3e; --border: #2a2a4a; --input-bg: #1a1a3e; --hover: #2a2a4a; --shadow: rgba(0,0,0,0.3); --radius: 12px; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }.theme-light { --bg: #f5f5f5; --surface: #ffffff; --sidebar: #f0f0f0; --text: #1a1a1a; --text2: #666; --accent: #007aff; --msg-own: #007aff; --msg-other: #ffffff; --border: #e0e0e0; --input-bg: #f0f0f0; --hover: #e8e8e8; --shadow: rgba(0,0,0,0.08); }.theme-blue { --bg: #0a1929; --surface: #0d2137; --sidebar: #0d2137; --accent: #3399ff; --msg-own: #3399ff; --msg-other: #0d2137; --border: #1a3a5a; --input-bg: #0d2137; --hover: #1a3a5a; }.theme-purple { --bg: #1a0a2e; --surface: #2d1a4e; --sidebar: #2d1a4e; --accent: #a855f7; --msg-own: #a855f7; --msg-other: #2d1a4e; --border: #3a2a5a; --input-bg: #2d1a4e; --hover: #3a2a5a; }.theme-green { --bg: #0a1a0a; --surface: #0d2d0d; --sidebar: #0d2d0d; --accent: #22c55e; --msg-own: #22c55e; --msg-other: #0d2d0d; --border: #1a4a1a; --input-bg: #0d2d0d; --hover: #1a4a1a; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; transition: background 0.2s, color 0.2s; }.auth { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }.auth-box { width: 340px; padding: 32px; }.auth-box h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }.auth-box p { color: var(--text2); font-size: 14px; margin-bottom: 24px; }.auth-box input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; margin-bottom: 10px; outline: none; font-family: inherit; background: var(--input-bg); color: var(--text); }.auth-box input:focus { border-color: var(--accent); }.auth-box .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.15s; }.auth-box .btn-primary { background: var(--accent); color: #fff; }.auth-box .btn-primary:hover { opacity: 0.9; }.auth-box .link { color: var(--accent); font-size: 14px; cursor: pointer; margin-top: 12px; display: inline-block; }.auth-box .link:hover { text-decoration: underline; }.auth-box .err { color: #ff3b30; font-size: 13px; margin-top: 8px; }.layout { display: flex; flex: 1; min-height: 0; }.sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: background 0.2s; }.sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }.sidebar-header .logo { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }.sidebar-header .logo svg { width: 22px; height: 22px; }.tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }.tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: 0.1s; border-bottom: 2px solid transparent; }.tab:hover { color: var(--text); background: var(--hover); }.tab.active { color: var(--accent); border-bottom-color: var(--accent); }.search-box { padding: 8px 12px; flex-shrink: 0; }.search-box input { width: 100%; padding: 8px 12px; border: none; background: var(--input-bg); border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; color: var(--text); }.search-box input::placeholder { color: var(--text2); }.list { flex: 1; overflow-y: auto; }.item { padding: 10px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.1s; }.item:hover { background: var(--hover); }.item.active { background: var(--hover); border-left: 3px solid var(--accent); }.item .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; color: #fff; }.item .info { flex: 1; min-width: 0; }.item .info .name { font-size: 14px; font-weight: 500; }.item .info .preview { font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }.item .actions { display: flex; gap: 4px; flex-shrink: 0; }.item .actions button { width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; font-size: 13px; background: transparent; }.item .actions button:hover { background: var(--hover); }.item .actions .accept { color: #22c55e; }.item .actions .decline { color: #ef4444; }.item .actions .remove { color: var(--text2); }.item .actions .add { color: var(--accent); }.badge { font-size: 10px; background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 8px; margin-left: auto; font-weight: 700; }.main { flex: 1; display: flex; flex-direction: column; background: var(--surface); min-width: 0; transition: background 0.2s; }.chat-header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }.chat-header .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; color: #fff; }.chat-header .info .name { font-size: 15px; font-weight: 600; }.chat-header .info .status { font-size: 11px; color: var(--text2); }.chat-header .actions { display: flex; gap: 6px; margin-left: auto; }.chat-header .actions button { width: 34px; height: 34px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; background: transparent; color: var(--text2); }.chat-header .actions button:hover { background: var(--hover); color: var(--text); }.chat-header .actions button.call-active { color: var(--accent); background: rgba(233,69,96,0.15); }#msgs { flex: 1; overflow-y: auto; padding: 16px 20px; background: var(--bg); }.msg { margin-bottom: 14px; max-width: 70%; }.msg.own { margin-left: auto; }.msg.own .bubble { background: var(--msg-own); color: #fff; border-bottom-right-radius: 4px; }.msg .bubble { background: var(--msg-other); padding: 10px 14px; border-radius: var(--radius); box-shadow: 0 1px 2px var(--shadow); word-wrap: break-word; border-bottom-left-radius: 4px; }.msg .bubble .text { font-size: 15px; line-height: 1.4; }.msg .bubble .file { display: block; max-width: 280px; max-height: 280px; border-radius: 8px; margin-top: 4px; cursor: pointer; }.msg .meta { font-size: 11px; color: var(--text2); margin-top: 4px; padding: 0 4px; }.msg.own .meta { text-align: right; }.bubble .file-link { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 6px; font-size: 13px; color: var(--accent); text-decoration: none; margin-top: 4px; }.sys { text-align: center; color: var(--text2); font-size: 12px; padding: 8px 0; }.input-area { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }.input-row { display: flex; gap: 8px; align-items: center; }.input-row input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 20px; font-size: 15px; outline: none; font-family: inherit; background: var(--input-bg); color: var(--text); }.input-row input[type="text"]:focus { border-color: var(--accent); }.input-row .btn { padding: 10px 18px; border: none; border-radius: 20px; background: var(--accent); color: #fff; font-size: 14px; cursor: pointer; font-weight: 600; font-family: inherit; white-space: nowrap; transition: 0.15s; }.input-row .btn:hover { opacity: 0.9; }.input-row .icon-btn { background: transparent; color: var(--text2); font-size: 18px; padding: 8px; cursor: pointer; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; }.input-row .icon-btn:hover { background: var(--hover); color: var(--text); }.input-row .icon-btn svg { width: 20px; height: 20px; }.hidden { display: none !important; }::-webkit-scrollbar { width: 6px; }::-webkit-scrollbar-track { background: transparent; }::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }.call-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }.call-overlay.show { display: flex; }.call-avatar { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: #fff; }.call-name { font-size: 22px; font-weight: 600; color: #fff; }.call-status { font-size: 14px; color: #aaa; }.call-actions { display: flex; gap: 20px; }.call-actions button { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.15s; }.call-actions button svg { width: 24px; height: 24px; }.call-actions .end-call { background: #ef4444; color: #fff; }.call-actions .end-call:hover { background: #dc2626; }.call-actions .toggle-mic { background: rgba(255,255,255,0.15); color: #fff; }.call-actions .toggle-mic:hover { background: rgba(255,255,255,0.25); }.call-actions .toggle-mic.muted { background: var(--accent); }.call-actions .toggle-screen { background: rgba(255,255,255,0.15); color: #fff; }.call-actions .toggle-screen:hover { background: rgba(255,255,255,0.25); }.call-actions .toggle-screen.active { background: #22c55e; }.settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 998; display: none; align-items: center; justify-content: center; }.settings-overlay.show { display: flex; }.settings-box { background: var(--surface); border-radius: var(--radius); padding: 24px; width: 380px; max-width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid var(--border); }.settings-box h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }.settings-box h2 .close { margin-left: auto; cursor: pointer; color: var(--text2); font-size: 20px; background: none; border: none; }.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }.theme-opt { padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid var(--border); transition: 0.1s; font-size: 13px; font-weight: 500; }.theme-opt:hover { border-color: var(--accent); }.theme-opt.active { border-color: var(--accent); background: rgba(233,69,96,0.1); }.theme-opt .preview { width: 100%; height: 30px; border-radius: 4px; margin-bottom: 6px; }.custom-theme-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }.custom-theme-row label { font-size: 12px; color: var(--text2); }.custom-theme-row input[type="color"] { width: 36px; height: 36px; border: none; border-radius: 4px; cursor: pointer; background: none; padding: 0; }.custom-theme-row input[type="text"] { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--input-bg); color: var(--text); outline: none; font-family: monospace; }.settings-section { margin-top: 16px; }.settings-section h3 { font-size: 14px; color: var(--text2); margin-bottom: 8px; }svg { fill: currentColor; }</style></head><body>
+<div class="auth" id="auth"><div class="auth-box" id="auth-login"><h1>Chat</h1><p>Войдите или создайте аккаунт</p><input id="login-user" placeholder="Имя пользователя" autofocus><input id="login-pass" type="password" placeholder="Пароль"><button class="btn btn-primary" id="login-btn">Войти</button><div class="err" id="login-err"></div><a class="link" id="show-reg">Нет аккаунта? Зарегистрироваться</a></div><div class="auth-box hidden" id="auth-reg"><h1>Регистрация</h1><p>Создайте аккаунт</p><input id="reg-user" placeholder="Имя пользователя"><input id="reg-pass" type="password" placeholder="Пароль"><button class="btn btn-primary" id="reg-btn">Зарегистрироваться</button><div class="err" id="reg-err"></div><a class="link" id="show-login">Уже есть аккаунт? Войти</a></div></div><div class="call-overlay" id="call-overlay"><div class="call-avatar" id="call-avatar" style="background:var(--accent)">?</div><div class="call-name" id="call-name">—</div><div class="call-status" id="call-status">Соединение...</div><div class="call-actions"><button class="toggle-mic" id="call-mic" title="Микрофон"><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4z"/><path d="M19 10a7 7 0 0 1-14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button><button class="toggle-screen" id="call-screen" title="Демонстрация"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button><button class="end-call" id="call-end" title="Завершить"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a1.5 1.5 0 0 1-1.5 1.5A18.5 18.5 0 0 1 2 3.5 1.5 1.5 0 0 1 3.5 2h3a1.5 1.5 0 0 1 1.5 1.5c0 1.2.2 2.4.6 3.5a1.5 1.5 0 0 1-.3 1.6L7.1 9.7a13 13 0 0 0 5.2 5.2l1.1-1.2a1.5 1.5 0 0 1 1.6-.3c1.1.4 2.3.6 3.5.6a1.5 1.5 0 0 1 1.5 1.5z"/></svg></button></div></div><div class="settings-overlay" id="settings-overlay"><div class="settings-box"><h2>⚙️ Настройки <button class="close" id="settings-close">✕</button></h2><div class="settings-section"><h3>Тема оформления</h3><div class="theme-grid" id="theme-grid"></div></div><div class="settings-section"><h3>Своя тема</h3><div class="custom-theme-row"><label>Фон</label><input type="color" id="cust-bg" value="#1a1a2e"><label>Акцент</label><input type="color" id="cust-accent" value="#e94560"><label>Поверхность</label><input type="color" id="cust-surface" value="#16213e"></div><div class="custom-theme-row"><label>Текст</label><input type="color" id="cust-text" value="#e0e0e0"><label>Боковая</label><input type="color" id="cust-sidebar" value="#0f3460"><button class="btn btn-primary" id="cust-apply" style="padding:6px 14px;font-size:12px;border-radius:6px;width:auto">Применить</button></div></div></div></div><div class="layout"><div class="sidebar"><div class="sidebar-header"><div class="logo"><svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6l2 3 2-3h6a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/><path d="M8 9h8"/><path d="M12 13V5"/></svg>Chat</div><button id="settings-btn" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px">⚙️</button></div><div class="tabs"><div class="tab active" data-tab="all">Все</div><div class="tab" data-tab="friends">Друзья</div><div class="tab" data-tab="pending">Заявки</div></div><div class="search-box"><input id="search" placeholder="Поиск..."></div><div class="list" id="list"></div></div><div class="main"><div class="chat-header"><div class="avatar" id="chat-avatar">G</div><div class="info"><div class="name" id="chat-name">Общий чат</div><div class="status" id="chat-status">онлайн</div></div><div class="actions"><button id="call-btn" title="Звонок"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a1.5 1.5 0 0 1-1.5 1.5A18.5 18.5 0 0 1 2 3.5 1.5 1.5 0 0 1 3.5 2h3a1.5 1.5 0 0 1 1.5 1.5c0 1.2.2 2.4.6 3.5a1.5 1.5 0 0 1-.3 1.6L7.1 9.7a13 13 0 0 0 5.2 5.2l1.1-1.2a1.5 1.5 0 0 1 1.6-.3c1.1.4 2.3.6 3.5.6a1.5 1.5 0 0 1 1.5 1.5z"/></svg></button><button id="add-friend-btn" title="Добавить в друзья"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></button></div></div><div id="msgs"></div><div class="input-area"><div class="input-row"><button class="icon-btn" id="file-btn" title="Прикрепить"><svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button><input type="text" id="input" placeholder="Сообщение..." autofocus><button class="btn" id="send-btn">Отправить</button></div></div></div></div><input type="file" id="file-input" style="display:none"><script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let username = '';
+let currentRoom = 'general';
+let currentDm = null;
+let currentTab = 'all';
+let userData = null;
+let allUsers = [];
+let users = [];
 
-    <!-- Экран авторизации -->
-    <div id="auth-screen">
-        <div class="auth-container">
-            <div class="auth-logo">
-                <div class="logo-icon"><i class="fas fa-comments"></i></div>
-                <h1>XGram</h1>
-                <p>Общайся без границ</p>
-            </div>
-            
-            <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
-                <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
-            </div>
-            
-            <!-- Форма входа -->
-            <div id="login-form" class="auth-form">
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="login-username" placeholder="Логин">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="login-password" placeholder="Пароль">
-                </div>
-                <button class="btn-primary" onclick="handleLogin()">
-                    <i class="fas fa-sign-in-alt"></i> Войти
-                </button>
-            </div>
-            
-            <!-- Форма регистрации -->
-            <div id="register-form" class="auth-form" style="display:none">
-                <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="reg-username" placeholder="Логин (мин. 3 символа)">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-id-card"></i>
-                    <input type="text" id="reg-displayname" placeholder="Отображаемое имя">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="reg-password" placeholder="Пароль">
-                </div>
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="reg-password2" placeholder="Повторите пароль">
-                </div>
-                <button class="btn-primary" onclick="handleRegister()">
-                    <i class="fas fa-user-plus"></i> Создать аккаунт
-                </button>
-            </div>
-        </div>
-    </div>
+// Auth
+const auth = document.getElementById('auth');
+const authLogin = document.getElementById('auth-login');
+const authReg = document.getElementById('auth-reg');
+const loginUser = document.getElementById('login-user');
+const loginPass = document.getElementById('login-pass');
+const loginBtn = document.getElementById('login-btn');
+const loginErr = document.getElementById('login-err');
+const regUser = document.getElementById('reg-user');
+const regPass = document.getElementById('reg-pass');
+const regBtn = document.getElementById('reg-btn');
+const regErr = document.getElementById('reg-err');
+const showReg = document.getElementById('show-reg');
+const showLogin = document.getElementById('show-login');
 
-    <!-- Основное приложение -->
-    <div id="app" style="display:none">
-        <!-- Верхняя панель -->
-        <div class="top-bar">
-            <!-- Кнопка выдвигающегося меню (как в Telegram) -->
-            <button class="tg-menu-btn" id="tg-menu-btn" onclick="toggleTelegramMenu()">
-                <i class="fas fa-bars" id="tg-menu-icon"></i>
-            </button>
-            
-            <div class="coins-display" onclick="openShop()">
-                <span class="coin-icon">🐱</span>
-                <span id="my-coins">0</span>
-            </div>
+showReg.onclick = () => { authLogin.classList.add('hidden'); authReg.classList.remove('hidden'); regUser.focus(); };
+showLogin.onclick = () => { authReg.classList.add('hidden'); authLogin.classList.remove('hidden'); loginUser.focus(); };
+loginBtn.onclick = doLogin;
+loginPass.onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+regBtn.onclick = doReg;
+regPass.onkeydown = e => { if (e.key === 'Enter') doReg(); };
 
-        </div>
-        
-        <!-- Оверлей для Telegram меню -->
-        <div class="tg-menu-overlay" id="tg-menu-overlay" onclick="closeTelegramMenu()"></div>
-        
-        <!-- Выдвигающееся меню как в Telegram -->
-        <div class="tg-drawer" id="tg-drawer">
-            <div class="tg-drawer-header">
-                <div class="tg-drawer-profile" onclick="openSettings(); closeTelegramMenu();">
-                    <div class="tg-drawer-avatar-wrapper" id="tg-drawer-avatar-wrapper">
-                        <img id="tg-drawer-avatar" src="" alt="Avatar">
-                    </div>
-                    <div class="tg-drawer-user-info">
-                        <span class="tg-drawer-name" id="tg-drawer-name">Имя</span>
-                        <span class="tg-drawer-username" id="tg-drawer-username">@username</span>
-                    </div>
-                </div>
-                <div class="tg-drawer-coins" onclick="openShop(); closeTelegramMenu();">
-                    <span class="coin-icon">🐱</span>
-                    <span id="tg-drawer-coins">0</span>
-                </div>
-            </div>
-            
-            <div class="tg-drawer-menu">
-                <div class="tg-drawer-item" onclick="openMyInventory(); closeTelegramMenu();">
-                    <i class="fas fa-box-open"></i>
-                    <span>Мой инвентарь</span>
-                </div>
-                <div class="tg-drawer-item" onclick="openMyGiftsModal(); closeTelegramMenu();">
-                    <i class="fas fa-gift"></i>
-                    <span>Мои подарки</span>
-                    <span class="tg-drawer-badge" id="gifts-count-badge">0</span>
-                </div>
-                <div class="tg-drawer-item" onclick="openMyNftsModal(); closeTelegramMenu();">
-                    <i class="fas fa-image"></i>
-                    <span>Мои NFT</span>
-                    <span class="tg-drawer-badge" id="nfts-count-badge">0</span>
-                </div>
-                
-                <div class="tg-drawer-divider"></div>
-                
-                <div class="tg-drawer-item" onclick="openShop(); closeTelegramMenu();">
-                    <i class="fas fa-store"></i>
-                    <span>Магазин</span>
-                </div>
-                <div class="tg-drawer-item" onclick="openMarket(); closeTelegramMenu();">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Рынок</span>
-                </div>
-                <div class="tg-drawer-item" onclick="openChest(); closeTelegramMenu();">
-                    <i class="fas fa-treasure-chest"></i>
-                    <span>Ежедневный сундук</span>
-                </div>
-                <div class="tg-drawer-item premium-item" onclick="openPremiumModal(); closeTelegramMenu();">
-                    <i class="fas fa-star"></i>
-                    <span>Премиум</span>
-                </div>
-                
-                <div class="tg-drawer-divider"></div>
-                
-                <div class="tg-drawer-item" onclick="openSettings(); closeTelegramMenu();">
-                    <i class="fas fa-cog"></i>
-                    <span>Настройки</span>
-                </div>
-                
-                <div class="tg-drawer-item tg-drawer-admin" id="tg-drawer-admin" style="display:none" onclick="openAdminPanel(); closeTelegramMenu();">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Админ-панель</span>
-                </div>
-            </div>
-            
-            <div class="tg-drawer-footer">
-                <span>XGram Messenger v2.0</span>
-            </div>
-        </div>
-        
-        <!-- Боковая панель -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="user-profile" onclick="openSettings()">
-                    <div class="avatar-wrapper">
-                        <img id="my-avatar" src="" alt="Avatar">
-                        <span class="online-dot"></span>
-                    </div>
-                    <div class="user-info">
-                        <span class="user-name" id="my-name">Имя</span>
-                        <span class="user-status" id="my-status">Онлайн</span>
-                    </div>
-                </div>
-                <button class="icon-btn" onclick="openSettings()" title="Настройки">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-            
-            <!-- Поиск -->
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Поиск людей..." oninput="handleSearch(this.value)">
-                <div id="search-results" class="search-results"></div>
-            </div>
-            
-            <!-- Заявки в друзья -->
-            <div id="friend-requests" class="friend-requests" style="display:none">
-                <div class="section-title">
-                    <i class="fas fa-user-plus"></i> Заявки в друзья
-                </div>
-                <div id="requests-list"></div>
-            </div>
-            
-            <!-- Список чатов -->
-            <div class="chats-list" id="chats-list">
-                <div class="empty-state" id="no-friends">
-                    <i class="fas fa-user-friends"></i>
-                    <p>Найдите друзей через поиск</p>
-                </div>
-            </div>
-        </aside>
+function doLogin() {
+const user = loginUser.value.trim(), pass = loginPass.value.trim();
+if (!user || !pass) { loginErr.textContent = 'Заполните все поля'; return; }
+socket.emit('login', { user, pass }, (res) => {
+if (res.ok) { loginErr.textContent = ''; userData = res.data; applyTheme(userData.theme || 'dark'); enter(user); }
+else loginErr.textContent = res.err;
+});
+}
 
-        <!-- Основная область чата -->
-        <main class="chat-area" id="chat-area">
-            <!-- Пустое состояние -->
-            <div class="chat-empty" id="chat-empty">
-                <div class="empty-icon"><i class="fas fa-comments"></i></div>
-                <h2>Выберите чат</h2>
-                <p>Или найдите новых друзей через поиск</p>
-            </div>
-            
-            <!-- Активный чат -->
-            <div class="chat-active" id="chat-active">
-                <header class="chat-header">
-                    <button class="icon-btn mobile-back" onclick="closeChatMobile()">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <div class="chat-user-info" onclick="openUserProfile()">
-                        <img id="chat-avatar" src="" alt="">
-                        <div>
-                            <span class="chat-name" id="chat-name">Имя</span>
-                            <span class="chat-status" id="chat-status">Онлайн</span>
-                        </div>
-                    </div>
-                    <div class="chat-actions">
-                        <button class="icon-btn" onclick="startCall(false)" title="Аудиозвонок">
-                            <i class="fas fa-phone"></i>
-                        </button>
-                        <button class="icon-btn" onclick="startCall(true)" title="Видеозвонок">
-                            <i class="fas fa-video"></i>
-                        </button>
-                    </div>
-                </header>
-                
-                <div class="messages-container" id="messages">
-                    <div class="typing-indicator" id="typing-indicator" style="display:none">
-                        <span></span><span></span><span></span>
-                    </div>
-                </div>
-                
-                <footer class="chat-input-area">
-                    <button class="icon-btn" onclick="openMediaPicker()" title="Медиа">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button class="icon-btn" onclick="openStickers()" title="Стикеры">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                    <button class="icon-btn gift-chat-btn" onclick="openGiftPicker()" title="Подарок">
-                        <i class="fas fa-gift"></i>
-                    </button>
-                    <button class="icon-btn nft-chat-btn" onclick="openNftPicker()" title="NFT">
-                        <i class="fas fa-image"></i>
-                    </button>
-                    <button class="icon-btn voice-btn" id="voice-btn" onclick="startVoiceRecord()" title="Голосовое">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <div class="message-input-wrapper">
-                        <textarea id="message-input" placeholder="Напишите сообщение..." 
-                               onkeypress="handleKeyPress(event)" oninput="handleTyping(); autoResizeTextarea(this)" rows="1"></textarea>
-                    </div>
-                    <button class="send-btn" onclick="sendMessage()" title="Отправить">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </footer>
-            </div>
-        </main>
-    </div>
+function doReg() {
+const user = regUser.value.trim(), pass = regPass.value.trim();
+if (!user || !pass) { regErr.textContent = 'Заполните все поля'; return; }
+socket.emit('register', { user, pass }, (res) => {
+if (res.ok) { regErr.textContent = ''; authLogin.classList.remove('hidden'); authReg.classList.add('hidden'); loginUser.value = user; loginPass.value = pass; doLogin(); }
+else regErr.textContent = res.err;
+});
+}
 
-    <!-- Модальное окно настроек -->
-    <div class="modal" id="settings-modal">
-        <div class="modal-content settings-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-cog"></i> Настройки</h2>
-                <button class="icon-btn" onclick="closeModal('settings-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="settings-body">
-                <!-- Аватар -->
-                <div class="settings-section">
-                    <h3>Профиль</h3>
-                    <div class="avatar-edit">
-                        <div class="avatar-preview">
-                            <img id="settings-avatar" src="" alt="">
-                            <label class="avatar-upload">
-                                <i class="fas fa-camera"></i>
-                                <input type="file" accept="image/*" onchange="uploadAvatar(event)" hidden>
-                            </label>
-                        </div>
-                        <button class="btn-secondary" onclick="removeAvatar()">Удалить фото</button>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Отображаемое имя</label>
-                        <input type="text" id="settings-name" placeholder="Ваше имя">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Статус</label>
-                        <input type="text" id="settings-status" placeholder="Ваш статус">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Telegram</label>
-                        <input type="text" id="settings-telegram" placeholder="@username">
-                    </div>
-                </div>
-                
-                <!-- Премиум настройки -->
-                <div class="settings-section premium-settings" id="premium-settings" style="display:none">
-                    <h3>⭐ Премиум настройки</h3>
-                    
-                    <div class="input-group">
-                        <label>Эмодзи в нике</label>
-                        <div class="emoji-picker-mini">
-                            <input type="text" id="settings-emoji" placeholder="Выберите эмодзи" readonly>
-                            <div class="emoji-options" id="emoji-options">
-                                <span onclick="selectNickEmoji('')">❌</span>
-                                <span onclick="selectNickEmoji('⭐')">⭐</span>
-                                <span onclick="selectNickEmoji('👑')">👑</span>
-                                <span onclick="selectNickEmoji('💎')">💎</span>
-                                <span onclick="selectNickEmoji('🔥')">🔥</span>
-                                <span onclick="selectNickEmoji('💫')">💫</span>
-                                <span onclick="selectNickEmoji('✨')">✨</span>
-                                <span onclick="selectNickEmoji('🌟')">🌟</span>
-                                <span onclick="selectNickEmoji('🎭')">🎭</span>
-                                <span onclick="selectNickEmoji('🦋')">🦋</span>
-                                <span onclick="selectNickEmoji('🌸')">🌸</span>
-                                <span onclick="selectNickEmoji('🍀')">🍀</span>
-                                <span onclick="selectNickEmoji('🎪')">🎪</span>
-                                <span onclick="selectNickEmoji('🎯')">🎯</span>
-                                <span onclick="selectNickEmoji('🚀')">🚀</span>
-                                <span onclick="selectNickEmoji('💜')">💜</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Шрифт имени</label>
-                        <select id="settings-font" class="font-select">
-                            <option value="default">Обычный</option>
-                            <option value="bold">Жирный</option>
-                            <option value="italic">Курсив</option>
-                            <option value="fancy">Fancy</option>
-                            <option value="mono">Моноширинный</option>
-                            <option value="cursive">Рукописный</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Эффект профиля</label>
-                        <select id="settings-effect" class="effect-select">
-                            <option value="">Без эффекта</option>
-                            <option value="rainbow">🌈 Rainbow</option>
-                            <option value="neon">💚 Neon</option>
-                            <option value="fire">🔥 Fire</option>
-                            <option value="pulse">💜 Pulse</option>
-                            <option value="gold">👑 Gold</option>
-                            <option value="ice">❄️ Ice</option>
-                            <option value="toxic">☢️ Toxic</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Рамка профиля</label>
-                        <div class="frame-selector" id="frame-selector">
-                            <div class="frame-option" data-frame="" onclick="selectFrame('')">
-                                <div class="frame-preview no-frame">❌</div>
-                                <span>Нет</span>
-                            </div>
-                            <div class="frame-option" data-frame="gold" onclick="selectFrame('gold')">
-                                <div class="frame-preview frame-gold"></div>
-                                <span>Золото</span>
-                            </div>
-                            <div class="frame-option" data-frame="diamond" onclick="selectFrame('diamond')">
-                                <div class="frame-preview frame-diamond"></div>
-                                <span>Алмаз</span>
-                            </div>
-                            <div class="frame-option" data-frame="rainbow" onclick="selectFrame('rainbow')">
-                                <div class="frame-preview frame-rainbow"></div>
-                                <span>Радуга</span>
-                            </div>
-                            <div class="frame-option" data-frame="neon" onclick="selectFrame('neon')">
-                                <div class="frame-preview frame-neon"></div>
-                                <span>Неон</span>
-                            </div>
-                            <div class="frame-option" data-frame="fire" onclick="selectFrame('fire')">
-                                <div class="frame-preview frame-fire"></div>
-                                <span>Огонь</span>
-                            </div>
-                            <div class="frame-option" data-frame="custom" onclick="selectFrame('custom')">
-                                <div class="frame-preview frame-custom">🎨</div>
-                                <span>Своя</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group custom-frame-editor" id="custom-frame-editor" style="display:none">
-                        <label>Настройка своей рамки</label>
-                        <div class="custom-frame-colors">
-                            <input type="color" id="frame-color-1" value="#ff0000" title="Цвет 1">
-                            <input type="color" id="frame-color-2" value="#00ff00" title="Цвет 2">
-                            <input type="number" id="frame-width" value="3" min="1" max="10" title="Толщина">
-                            <select id="frame-style">
-                                <option value="solid">Сплошная</option>
-                                <option value="gradient">Градиент</option>
-                                <option value="animated">Анимация</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>NFT/Подарок в нике</label>
-                        <select id="settings-nick-item" class="nick-item-select">
-                            <option value="">Не выбрано</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Тема -->
-                <div class="settings-section">
-                    <h3>Оформление</h3>
-                    <div class="theme-selector">
-                        <div class="theme-option" data-theme="dark" onclick="selectTheme('dark')">
-                            <div class="theme-preview dark-preview"></div>
-                            <span>Тёмная</span>
-                        </div>
-                        <div class="theme-option" data-theme="light" onclick="selectTheme('light')">
-                            <div class="theme-preview light-preview"></div>
-                            <span>Светлая</span>
-                        </div>
-                        <div class="theme-option" data-theme="purple" onclick="selectTheme('purple')">
-                            <div class="theme-preview purple-preview"></div>
-                            <span>Фиолетовая</span>
-                        </div>
-                        <div class="theme-option" data-theme="ocean" onclick="selectTheme('ocean')">
-                            <div class="theme-preview ocean-preview"></div>
-                            <span>Океан</span>
-                        </div>
-                        <div class="theme-option" data-theme="sunset" onclick="selectTheme('sunset')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, #ff6b6b, #2d1515);"></div>
-                            <span>Закат</span>
-                        </div>
-                        <div class="theme-option" data-theme="forest" onclick="selectTheme('forest')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, #4ade80, #0a1a0a);"></div>
-                            <span>Лес</span>
-                        </div>
-                        <div class="theme-option" data-theme="neon" onclick="selectTheme('neon')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, #00ffff, #0a0a14);"></div>
-                            <span>Неон</span>
-                        </div>
-                        <div class="theme-option" data-theme="sakura" onclick="selectTheme('sakura')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, #ff69b4, #1a0f14);"></div>
-                            <span>Сакура</span>
-                        </div>
-                        <div class="theme-option" data-theme="cyberpunk" onclick="selectTheme('cyberpunk')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, #f72585, #0d0d0d);"></div>
-                            <span>Киберпанк</span>
-                        </div>
-                        <div class="theme-option" data-theme="glass" onclick="selectTheme('glass')">
-                            <div class="theme-preview" style="background: linear-gradient(135deg, rgba(167,139,250,0.6), rgba(96,165,250,0.4)); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);"></div>
-                            <span>Стекло</span>
-                        </div>
-                        <div class="theme-option" data-theme="custom" onclick="selectTheme('custom')">
-                            <div class="theme-preview custom-preview"><i class="fas fa-palette"></i></div>
-                            <span>Своя</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Редактор кастомной темы -->
-                    <div id="custom-theme-editor" class="custom-theme-editor" style="display:none">
-                        <h4><i class="fas fa-paint-brush"></i> Настройка темы</h4>
-                        <div class="color-grid">
-                            <div class="color-input">
-                                <label>Фон</label>
-                                <input type="color" id="custom-bg" value="#0a0a0f">
-                            </div>
-                            <div class="color-input">
-                                <label>Карточки</label>
-                                <input type="color" id="custom-secondary" value="#12121a">
-                            </div>
-                            <div class="color-input">
-                                <label>Акцент</label>
-                                <input type="color" id="custom-accent" value="#6366f1">
-                            </div>
-                            <div class="color-input">
-                                <label>Текст</label>
-                                <input type="color" id="custom-text" value="#ffffff">
-                            </div>
-                        </div>
-                        <button class="btn-secondary" onclick="applyCustomTheme()">
-                            <i class="fas fa-check"></i> Применить
-                        </button>
-                    </div>
-                </div>
-                
-                <button class="btn-primary" onclick="saveSettings()">
-                    <i class="fas fa-save"></i> Сохранить
-                </button>
-                
-                <button class="btn-danger" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Выйти
-                </button>
-                
-                <button class="btn-danger-outline" onclick="openDeleteAccount()">
-                    <i class="fas fa-trash"></i> Удалить аккаунт
-                </button>
-            </div>
-        </div>
-    </div>
+// Theme
+const themes = {
+dark: { bg:'#1a1a2e', surface:'#16213e', sidebar:'#0f3460', accent:'#e94560', text:'#e0e0e0' },
+light: { bg:'#f5f5f5', surface:'#fff', sidebar:'#f0f0f0', accent:'#007aff', text:'#1a1a1a' },
+blue: { bg:'#0a1929', surface:'#0d2137', sidebar:'#0d2137', accent:'#3399ff', text:'#e0e0e0' },
+purple: { bg:'#1a0a2e', surface:'#2d1a4e', sidebar:'#2d1a4e', accent:'#a855f7', text:'#e0e0e0' },
+green: { bg:'#0a1a0a', surface:'#0d2d0d', sidebar:'#0d2d0d', accent:'#22c55e', text:'#e0e0e0' }
+};
+let currentTheme = 'dark';
 
-    <!-- Модальное окно стикеров -->
-    <div class="modal" id="stickers-modal">
-        <div class="modal-content stickers-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-smile"></i> Стикеры</h2>
-                <button class="icon-btn" onclick="closeModal('stickers-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="stickers-grid" id="stickers-grid"></div>
-        </div>
-    </div>
+function applyTheme(name) {
+currentTheme = name;
+const t = name === 'custom' ? getCustomTheme() : themes[name];
+if (!t) return;
+document.documentElement.style.setProperty('--bg', t.bg);
+document.documentElement.style.setProperty('--surface', t.surface);
+document.documentElement.style.setProperty('--sidebar', t.sidebar);
+document.documentElement.style.setProperty('--accent', t.accent);
+document.documentElement.style.setProperty('--text', t.text);
+document.documentElement.style.setProperty('--text2', adjustColor(t.text, -60));
+document.documentElement.style.setProperty('--msg-own', t.accent);
+document.documentElement.style.setProperty('--border', adjustColor(t.surface, 30));
+document.documentElement.style.setProperty('--input-bg', adjustColor(t.surface, -10));
+document.documentElement.style.setProperty('--hover', adjustColor(t.surface, 20));
+document.documentElement.style.setProperty('--msg-other', t.surface);
+if (username) socket.emit('save-theme', name);
+renderThemeGrid();
+}
 
-    <!-- Модальное окно медиа -->
-    <div class="modal" id="media-modal">
-        <div class="modal-content media-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-photo-video"></i> Отправить</h2>
-                <button class="icon-btn" onclick="closeModal('media-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="media-options">
-                <label class="media-option">
-                    <i class="fas fa-image"></i>
-                    <span>Фото</span>
-                    <input type="file" accept="image/*" onchange="sendMedia(event, 'image')" hidden>
-                </label>
-                <label class="media-option">
-                    <i class="fas fa-video"></i>
-                    <span>Видео</span>
-                    <input type="file" accept="video/*" onchange="sendMedia(event, 'video')" hidden>
-                </label>
-                <label class="media-option">
-                    <i class="fas fa-music"></i>
-                    <span>Аудио</span>
-                    <input type="file" accept="audio/*" onchange="sendMedia(event, 'audio')" hidden>
-                </label>
-                <label class="media-option">
-                    <i class="fas fa-file"></i>
-                    <span>Документ</span>
-                    <input type="file" onchange="sendMedia(event, 'file')" hidden>
-                </label>
-            </div>
-        </div>
-    </div>
+function adjustColor(hex, amt) {
+let c = hex.replace('#','');
+if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+let num = parseInt(c, 16);
+let r = Math.min(255,Math.max(0,(num>>16)+amt));
+let g = Math.min(255,Math.max(0,((num>>8)&0x00FF)+amt));
+let b = Math.min(255,Math.max(0,(num&0x0000FF)+amt));
+return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
 
-    <!-- Экран звонка -->
-    <div class="call-screen" id="call-screen">
-        <div class="call-bg"></div>
-        <div class="call-content">
-            <img id="call-avatar" src="" alt="" class="call-avatar">
-            <h2 id="call-name">Имя</h2>
-            <p id="call-status-text">Звоним...</p>
-            
-            <video id="remote-video" autoplay playsinline></video>
-            <video id="local-video" autoplay playsinline muted></video>
-            <audio id="remote-audio" autoplay></audio>
-            
-            <div class="call-controls">
-                <button class="call-btn mute-btn" id="mute-btn" onclick="toggleMute()">
-                    <i class="fas fa-microphone"></i>
-                </button>
-                <button class="call-btn screen-btn" id="screen-btn" onclick="toggleScreenShare()">
-                    <i class="fas fa-desktop"></i>
-                </button>
-                <button class="call-btn end-btn" onclick="endCall()">
-                    <i class="fas fa-phone-slash"></i>
-                </button>
-                <button class="call-btn video-btn" id="video-btn" onclick="toggleVideo()" style="display:none">
-                    <i class="fas fa-video"></i>
-                </button>
-            </div>
-            
-            <div class="incoming-controls" id="incoming-controls" style="display:none">
-                <button class="call-btn reject-btn" onclick="rejectIncomingCall()">
-                    <i class="fas fa-phone-slash"></i>
-                </button>
-                <button class="call-btn accept-btn" onclick="acceptIncomingCall()">
-                    <i class="fas fa-phone"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+function getCustomTheme() {
+return { bg: document.getElementById('cust-bg').value, surface: document.getElementById('cust-surface').value, sidebar: document.getElementById('cust-sidebar').value, accent: document.getElementById('cust-accent').value, text: document.getElementById('cust-text').value };
+}
 
-    <!-- Просмотр медиа -->
-    <div class="media-viewer" id="media-viewer" onclick="closeMediaViewer()">
-        <button class="close-viewer"><i class="fas fa-times"></i></button>
-        <img id="viewer-image" src="" alt="">
-        <video id="viewer-video" controls></video>
-    </div>
+function renderThemeGrid() {
+const grid = document.getElementById('theme-grid'); grid.innerHTML = '';
+Object.keys(themes).forEach(name => {
+const t = themes[name]; const div = document.createElement('div');
+div.className = 'theme-opt' + (currentTheme === name ? ' active' : '');
+div.innerHTML = `<div class="preview" style="background:linear-gradient(135deg,${t.bg},${t.accent})"></div>${name.charAt(0).toUpperCase()+name.slice(1)}`;
+div.onclick = () => applyTheme(name);
+grid.appendChild(div);
+});
+const cust = document.createElement('div');
+cust.className = 'theme-opt' + (currentTheme === 'custom' ? ' active' : '');
+cust.innerHTML = '<div class="preview" style="background:linear-gradient(135deg,#333,#e94560)"></div>Своя';
+cust.onclick = () => applyTheme('custom');
+grid.appendChild(cust);
+}
 
-    <!-- Модальное окно магазина -->
-    <div class="modal" id="shop-modal">
-        <div class="modal-content shop-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-store"></i> Магазин</h2>
-                <div class="shop-balance">
-                    <span class="coin-icon">🐱</span>
-                    <span id="shop-coins">0</span> котиков
-                </div>
-                <button class="icon-btn" onclick="closeModal('shop-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="shop-tabs">
-                <button class="shop-tab active" onclick="switchShopTab('gifts')">🎁 Подарки</button>
-                <button class="shop-tab" onclick="switchShopTab('nfts')">🖼 NFT</button>
-                <button class="shop-tab" onclick="switchShopTab('my')">📦 Мои</button>
-                <button class="shop-tab create-nft-tab" id="create-nft-tab" onclick="openCreateNft()" style="display:none">✨ Создать</button>
-            </div>
-            
-            <div id="shop-gifts" class="shop-grid"></div>
-            <div id="shop-nfts" class="shop-grid" style="display:none"></div>
-            <div id="shop-my" class="shop-my" style="display:none">
-                <h3>Мои подарки</h3>
-                <div id="my-gifts-list" class="my-items-grid"></div>
-                <h3>Мои NFT</h3>
-                <div id="my-nfts-list" class="my-items-grid"></div>
-            </div>
-        </div>
-    </div>
+document.getElementById('cust-apply').onclick = () => applyTheme('custom');
+document.getElementById('settings-btn').onclick = () => { document.getElementById('settings-overlay').classList.add('show'); renderThemeGrid(); };
+document.getElementById('settings-close').onclick = () => document.getElementById('settings-overlay').classList.remove('show');
 
-    <!-- Модальное окно админ-панели -->
-    <div class="modal" id="admin-modal">
-        <div class="modal-content admin-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-shield-alt"></i> Админ-панель</h2>
-                <button class="icon-btn" onclick="closeModal('admin-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="admin-body">
-                <div class="admin-section">
-                    <h3>Пользователи</h3>
-                    <div class="admin-search">
-                        <input type="text" id="admin-search" placeholder="Поиск пользователя..." oninput="filterAdminUsers(this.value)">
-                    </div>
-                    <div id="admin-users-list" class="admin-users-list"></div>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>Быстрые действия</h3>
-                    <div class="admin-quick-actions">
-                        <div class="input-group">
-                            <label>Выдать котики</label>
-                            <input type="text" id="admin-coins-user" placeholder="Логин">
-                            <input type="number" id="admin-coins-amount" placeholder="Количество" value="100">
-                            <button class="btn-primary" onclick="adminAddCoins()">
-                                <i class="fas fa-coins"></i> Выдать
-                            </button>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label>Подарить подарок</label>
-                            <input type="text" id="admin-gift-user" placeholder="Логин">
-                            <select id="admin-gift-select"></select>
-                            <button class="btn-primary" onclick="adminGiftUser()">
-                                <i class="fas fa-gift"></i> Подарить
-                            </button>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label>Подарить NFT</label>
-                            <input type="text" id="admin-nft-user" placeholder="Логин">
-                            <select id="admin-nft-select"></select>
-                            <button class="btn-primary" onclick="adminGiftNFT()">
-                                <i class="fas fa-image"></i> Подарить
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>Магазин</h3>
-                    <div class="admin-shop-actions">
-                        <button class="btn-secondary" onclick="openAddShopNft()">
-                            <i class="fas fa-plus"></i> Добавить NFT
-                        </button>
-                        <button class="btn-secondary" onclick="openAddShopGift()">
-                            <i class="fas fa-gift"></i> Добавить подарок
-                        </button>
-                        <button class="btn-secondary" onclick="openEditPrices()">
-                            <i class="fas fa-edit"></i> Редактировать цены
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>⭐ Премиум</h3>
-                    <div class="input-group">
-                        <input type="text" id="admin-premium-user" placeholder="Логин пользователя">
-                        <button class="btn-primary" onclick="adminGivePremium()">
-                            <i class="fas fa-star"></i> Выдать премиум
-                        </button>
-                        <button class="btn-danger" onclick="adminRemovePremium()">
-                            <i class="fas fa-times"></i> Забрать премиум
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="admin-section">
-                    <h3>📢 Глобальное сообщение</h3>
-                    <div class="input-group">
-                        <input type="text" id="global-message-text" placeholder="Сообщение для всех пользователей...">
-                        <button class="btn-primary" onclick="sendGlobalMessage()">
-                            <i class="fas fa-bullhorn"></i> Отправить всем
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Бэкапы базы данных -->
-                <div class="admin-section">
-                    <h3>💾 Бэкапы базы данных</h3>
-                    <div class="backup-actions">
-                        <button class="btn-primary" onclick="adminCreateBackup()">
-                            <i class="fas fa-save"></i> Создать бэкап
-                        </button>
-                        <button class="btn-secondary" onclick="adminLoadBackups()">
-                            <i class="fas fa-list"></i> Показать бэкапы
-                        </button>
-                    </div>
-                    <div id="backups-list" class="backups-list" style="display:none"></div>
-                </div>
-                
-                <!-- ADMIN ABUSE -->
-                <div class="admin-section admin-abuse">
-                    <h3>🔥 ADMIN ABUSE</h3>
-                    <div class="admin-abuse-grid">
-                        <button class="btn-abuse rainbow" onclick="adminAbuseRainbow()">
-                            🌈 Rainbow всем
-                        </button>
-                        <button class="btn-abuse" onclick="adminAbuseGlobalCoins()">
-                            🐱 Котики всем
-                        </button>
-                        <button class="btn-abuse" onclick="adminAbuseGlobalNft()">
-                            🖼 NFT всем
-                        </button>
-                        <button class="btn-abuse" onclick="adminAbuseGlobalGift()">
-                            🎁 Подарок всем
-                        </button>
-                        <button class="btn-abuse" onclick="adminAbuseGlobalEffect()">
-                            ✨ Эффект всем
-                        </button>
-                        <button class="btn-abuse screamer" onclick="adminAbuseScreamer()">
-                            👻 Скример всем
-                        </button>
-                    </div>
-                    
-                    <!-- Музыка для всех -->
-                    <div class="admin-music-section">
-                        <h4>🎵 Музыка для всех</h4>
-                        <div class="input-group">
-                            <input type="text" id="admin-music-url" placeholder="URL музыки (mp3, YouTube...)">
-                            <button class="btn-abuse music" onclick="adminPlayMusicAll()">
-                                <i class="fas fa-play"></i> Включить всем
-                            </button>
-                            <button class="btn-danger" onclick="adminStopMusicAll()">
-                                <i class="fas fa-stop"></i> Стоп
-                            </button>
-                        </div>
-                        <div class="music-presets">
-                            <button onclick="setMusicPreset('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3')">🎸 Rock</button>
-                            <button onclick="setMusicPreset('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3')">🎹 Piano</button>
-                            <button onclick="setMusicPreset('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3')">🎺 Jazz</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Музыка конкретному пользователю -->
-                    <div class="admin-music-section">
-                        <h4>🎧 Музыка пользователю</h4>
-                        <div class="input-group">
-                            <input type="text" id="admin-music-user" placeholder="Логин пользователя">
-                            <input type="text" id="admin-music-user-url" placeholder="URL музыки">
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="admin-music-volume" placeholder="Громкость 0-100" value="50" min="0" max="100">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="admin-music-loop"> Зациклить
-                            </label>
-                        </div>
-                        <div class="input-group">
-                            <button class="btn-abuse music" onclick="adminPlayMusicUser()">
-                                <i class="fas fa-play"></i> Включить
-                            </button>
-                            <button class="btn-danger" onclick="adminStopMusicUser()">
-                                <i class="fas fa-stop"></i> Стоп
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Количество котиков для всех</label>
-                        <input type="number" id="abuse-coins-amount" value="1000" min="1">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>NFT для всех</label>
-                        <select id="abuse-nft-select"></select>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Подарок для всех</label>
-                        <select id="abuse-gift-select"></select>
-                    </div>
-                </div>
-                
-                <!-- Режим обслуживания -->
-                <div class="admin-section">
-                    <h3>🔧 Режим обслуживания</h3>
-                    <div class="maintenance-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="maintenance-toggle" onchange="toggleMaintenance()">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span id="maintenance-status">Выключен</span>
-                    </div>
-                    <div class="input-group">
-                        <label>Сообщение при обслуживании</label>
-                        <input type="text" id="maintenance-message" placeholder="Сайт на техническом обслуживании..." value="Сайт на техническом обслуживании. Пожалуйста, подождите.">
-                    </div>
-                </div>
-                
-                <!-- Глобальная тема -->
-                <div class="admin-section">
-                    <h3>🌍 Глобальная тема</h3>
-                    <div class="global-theme-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="earth-theme-toggle" onchange="toggleEarthTheme()">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span>Earth тема для всех</span>
-                    </div>
-                </div>
-                
-                <!-- Кастомные редкости -->
-                <div class="admin-section">
-                    <h3>💎 Кастомные редкости</h3>
-                    <div class="input-group">
-                        <input type="text" id="custom-rarity-name" placeholder="Название редкости">
-                        <input type="color" id="custom-rarity-color" value="#ff00ff">
-                        <select id="custom-rarity-effect">
-                            <option value="none">Без эффекта</option>
-                            <option value="glow">Свечение</option>
-                            <option value="pulse">Пульсация</option>
-                            <option value="rainbow">Радуга</option>
-                            <option value="neon">Неон</option>
-                        </select>
-                        <button class="btn-primary" onclick="addCustomRarity()">
-                            <i class="fas fa-plus"></i> Добавить
-                        </button>
-                    </div>
-                    <div id="custom-rarities-list" class="custom-rarities-list"></div>
-                </div>
-                
-                <!-- Автоповышение цен -->
-                <div class="admin-section">
-                    <h3>📈 Автоповышение цен</h3>
-                    <div class="price-increase-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="price-increase-toggle" onchange="togglePriceIncrease()">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span>Повышать цены каждые 10 минут</span>
-                    </div>
-                    <div class="input-group">
-                        <label>Процент повышения</label>
-                        <input type="number" id="price-increase-percent" value="5" min="1" max="100">
-                        <span>%</span>
-                    </div>
-                </div>
-                
-                <!-- Открыть сайт у пользователя -->
-                <div class="admin-section">
-                    <h3>🌐 Открыть сайт у пользователя</h3>
-                    <div class="input-group">
-                        <select id="admin-open-site-user" class="user-select">
-                            <option value="">Выберите пользователя</option>
-                        </select>
-                        <input type="text" id="admin-open-site-url" placeholder="https://example.com">
-                        <button class="btn-primary" onclick="adminOpenSiteForUser()">
-                            <i class="fas fa-external-link-alt"></i> Открыть
-                        </button>
-                    </div>
-                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                        * Сайт откроется только если пользователь онлайн
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+tab.onclick = () => {
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+tab.classList.add('active');
+currentTab = tab.dataset.tab;
+renderList();
+};
+});
 
-    <!-- Уведомление о подарке -->
-    <div class="gift-notification" id="gift-notification">
-        <div class="gift-notification-content">
-            <div class="gift-emoji" id="gift-emoji">🎁</div>
-            <div class="gift-text">
-                <span id="gift-from">Кто-то</span> подарил вам
-                <span id="gift-name">подарок</span>!
-            </div>
-        </div>
-    </div>
+// Lists
+const search = document.getElementById('search');
+const list = document.getElementById('list');
+const msgs = document.getElementById('msgs');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const fileBtn = document.getElementById('file-btn');
+const fileInput = document.getElementById('file-input');
+const chatName = document.getElementById('chat-name');
+const chatStatus = document.getElementById('chat-status');
+const chatAvatar = document.getElementById('chat-avatar');
+const callBtn = document.getElementById('call-btn');
+const addFriendBtn = document.getElementById('add-friend-btn');
 
-    <!-- Профиль пользователя -->
-    <div class="modal" id="user-profile-modal">
-        <div class="modal-content profile-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-user"></i> Профиль</h2>
-                <button class="icon-btn" onclick="closeModal('user-profile-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="profile-body">
-                <div class="profile-header">
-                    <div class="profile-avatar-wrapper" id="profile-avatar-wrapper">
-                        <img id="profile-avatar" src="" alt="" class="profile-avatar">
-                    </div>
-                    <div class="profile-info">
-                        <h3 id="profile-name">Имя</h3>
-                        <span id="profile-username">@username</span>
-                        <span id="profile-status-text" class="profile-status"></span>
-                    </div>
-                </div>
-                <div class="profile-stats">
-                    <div class="stat"><span id="profile-friends">0</span> друзей</div>
-                    <div class="stat" onclick="viewProfileGifts()"><span id="profile-gifts-count">0</span> подарков</div>
-                    <div class="stat" onclick="viewProfileNfts()"><span id="profile-nfts-count">0</span> NFT</div>
-                </div>
-                <div id="profile-telegram" class="profile-telegram" style="display:none">
-                    <i class="fab fa-telegram"></i> <a id="profile-tg-link" href="" target="_blank"></a>
-                </div>
-                
-                <!-- Кнопки просмотра подарков и NFT -->
-                <div class="profile-inventory-btns">
-                    <button class="profile-inv-btn gifts-btn" onclick="viewProfileGifts()">
-                        <i class="fas fa-gift"></i> Подарки
-                    </button>
-                    <button class="profile-inv-btn nfts-btn" onclick="viewProfileNfts()">
-                        <i class="fas fa-image"></i> NFT
-                    </button>
-                </div>
-                
-                <div class="profile-gifts-preview">
-                    <h4>Подарки <span class="view-all" onclick="viewProfileGifts()">Смотреть все →</span></h4>
-                    <div id="profile-gifts-list" class="profile-gifts-grid"></div>
-                </div>
-                <div class="profile-nfts-preview">
-                    <h4>NFT <span class="view-all" onclick="viewProfileNfts()">Смотреть все →</span></h4>
-                    <div id="profile-nfts-list" class="profile-nfts-grid"></div>
-                </div>
-                <div class="profile-actions">
-                    <button class="btn-primary" id="profile-add-btn" onclick="addFriendFromProfile()">
-                        <i class="fas fa-user-plus"></i> Добавить
-                    </button>
-                    <button class="btn-secondary" onclick="closeModal('user-profile-modal')">Закрыть</button>
-                </div>
-            </div>
-        </div>
-    </div>
+const colors = ['#007aff','#ff3b30','#34c759','#ff9500','#af52de','#5ac8fa','#ff2d55','#5856d6'];
+function getColor(s) { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return colors[Math.abs(h)%colors.length]; }
+function getAvatar(n) { return n ? n.charAt(0).toUpperCase() : '?'; }
+function escapeHtml(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-    <!-- Ежедневный сундук -->
-    <div class="modal" id="chest-modal">
-        <div class="modal-content chest-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-treasure-chest"></i> 🎁 Ежедневный сундук</h2>
-                <button class="icon-btn" onclick="closeModal('chest-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="chest-body">
-                <div class="chest-icon">🎁</div>
-                <p>Открывай сундук каждый день и получай подарки!</p>
-                <button class="btn-primary chest-open-btn" onclick="claimDailyChest()">
-                    <i class="fas fa-box-open"></i> Открыть сундук
-                </button>
-                <div id="chest-result" class="chest-result" style="display:none"></div>
-            </div>
-        </div>
-    </div>
+function enter(user) {
+username = user;
+auth.classList.add('hidden');
+socket.emit('join', { username: user, room: 'general' });
+socket.emit('get-all-users', (u) => { allUsers = u; renderList(); });
+socket.emit('get-user-data', (d) => { userData = d; if (d && d.theme) applyTheme(d.theme); renderList(); });
+}
 
-    <!-- Рынок -->
-    <div class="modal" id="market-modal">
-        <div class="modal-content market-content">
-            <div class="modal-header">
-                <h2>🏪 Рынок</h2>
-                <button class="icon-btn" onclick="closeModal('market-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="market-tabs">
-                <button class="market-tab active" onclick="switchMarketTab('buy')">Купить</button>
-                <button class="market-tab" onclick="switchMarketTab('sell')">Продать</button>
-                <button class="market-tab" onclick="switchMarketTab('my')">Мои лоты</button>
-            </div>
-            <div id="market-buy" class="market-grid"></div>
-            <div id="market-sell" class="market-sell" style="display:none">
-                <h4>Выберите предмет для продажи:</h4>
-                <div id="market-sell-gifts" class="market-sell-items"></div>
-                <div id="market-sell-nfts" class="market-sell-items"></div>
-            </div>
-            <div id="market-my" class="market-my-listings" style="display:none"></div>
-            <p class="market-hint">Комиссия: 10% от продажи</p>
-        </div>
-    </div>
+function renderList() {
+const q = search.value.toLowerCase();
+list.innerHTML = '';
+let items = [];
+if (currentTab === 'all') {
+items = [{ id:'general', name:'Общий чат', isDm:false, online:true }];
+allUsers.filter(u => u !== username).forEach(u => items.push({ id:u, name:u, isDm:true, online:users.includes(u) }));
+} else if (currentTab === 'friends') {
+if (userData && userData.friends) userData.friends.forEach(u => items.push({ id:u, name:u, isDm:true, online:users.includes(u) }));
+} else if (currentTab === 'pending') {
+if (userData && userData.incoming) userData.incoming.forEach(u => items.push({ id:u, name:u, type:'incoming' }));
+if (userData && userData.outgoing) userData.outgoing.forEach(u => items.push({ id:u, name:u, type:'outgoing' }));
+if (items.length === 0) { const d = document.createElement('div'); d.style.cssText = 'padding:20px;text-align:center;color:var(--text2);font-size:13px'; d.textContent = 'Нет заявок'; list.appendChild(d); return; }
+}
+items.filter(i => i.name.toLowerCase().includes(q)).forEach(i => {
+const div = document.createElement('div');
+div.className = 'item' + ((i.isDm && currentDm === i.id) || (!i.isDm && !currentDm) ? ' active' : '');
+const isOnline = !i.isDm || users.includes(i.id);
+let actionsHtml = '';
+if (i.type === 'incoming') actionsHtml = `<div class="actions"><button class="accept" title="Принять">✓</button><button class="decline" title="Отклонить">✕</button></div>`;
+else if (i.type === 'outgoing') actionsHtml = `<div class="actions"><span style="font-size:11px;color:var(--text2)">...</span></div>`;
+else if (i.isDm && i.online && !(userData && userData.friends && userData.friends.includes(i.id))) actionsHtml = `<div class="actions"><button class="add" title="Добавить в друзья">+</button></div>`;
+div.innerHTML = `<div class="avatar" style="background:${getColor(i.name)}">${getAvatar(i.name)}</div><div class="info"><div class="name">${i.name}</div><div class="preview">${i.isDm ? 'Личные сообщения' : 'Общий чат'}</div></div>${i.isDm ? `<div class="dot" style="background:${isOnline ? '#34c759' : '#424242'}"></div>` : ''}${actionsHtml}`;
+div.addEventListener('click', (e) => {
+if (e.target.closest('.actions')) return;
+if (i.isDm) { currentDm = i.id; currentRoom = 'dm:'+[username,i.id].sort().join(':'); socket.emit('join-dm', { with: i.id }); }
+else { currentDm = null; currentRoom = 'general'; socket.emit('join', { username, room: 'general' }); }
+chatName.textContent = i.name; chatAvatar.textContent = getAvatar(i.name); chatAvatar.style.background = getColor(i.name);
+chatStatus.textContent = i.isDm ? (isOnline ? 'в сети' : 'не в сети') : 'онлайн';
+msgs.innerHTML = '';
+renderList();
+if (i.isDm) addFriendBtn.style.display = 'inline-flex'; else addFriendBtn.style.display = 'none';
+});
+list.appendChild(div);
+if (i.type === 'incoming') {
+div.querySelector('.accept').onclick = () => { socket.emit('friend-accept', { from: i.id }); };
+div.querySelector('.decline').onclick = () => { socket.emit('friend-decline', { from: i.id }); };
+} else if (i.isDm && i.online) {
+const addBtn = div.querySelector('.add');
+if (addBtn) addBtn.onclick = () => { socket.emit('friend-req', { to: i.id }, (r) => { if (!r.ok) alert(r.err || 'Ошибка'); }); };
+}
+});
+}
 
-    <!-- Выставить на продажу -->
-    <div class="modal" id="list-item-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>💰 Выставить на продажу</h2>
-                <button class="icon-btn" onclick="closeModal('list-item-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="list-item-body">
-                <div id="list-item-preview" class="list-item-preview"></div>
-                <div class="input-group">
-                    <label>Цена (котики)</label>
-                    <input type="number" id="list-item-price" placeholder="100" min="1">
-                </div>
-                <p class="list-hint">Вы получите: <span id="list-earnings">0</span> 🐱 (после комиссии 10%)</p>
-                <button class="btn-primary" onclick="confirmListItem()">
-                    <i class="fas fa-tag"></i> Выставить
-                </button>
-            </div>
-        </div>
-    </div>
+search.addEventListener('input', renderList);
+sendBtn.addEventListener('click', sendMsg);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+fileBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+const file = fileInput.files[0]; if (!file) return;
+const r = new FileReader();
+r.onload = (e) => { if (currentDm) socket.emit('dm', { to: currentDm, text: '', file: e.target.result }); else socket.emit('msg', { text: '', file: e.target.result }); };
+r.readAsDataURL(file); fileInput.value = '';
+});
+addFriendBtn.onclick = () => {
+const n = prompt('Имя пользователя для добавления в друзья:');
+if (n && n.trim()) socket.emit('friend-req', { to: n.trim() }, (r) => { if (!r.ok) alert(r.err || 'Ошибка'); });
+};
 
-    <!-- Модальное окно выбора подарка для отправки -->
-    <div class="modal" id="gift-picker-modal">
-        <div class="modal-content gift-picker-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-gift"></i> Подарить</h2>
-                <button class="icon-btn" onclick="closeModal('gift-picker-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="gift-picker-list" class="gift-picker-grid"></div>
-            <p class="gift-picker-hint">Выберите подарок из вашей коллекции</p>
-        </div>
-    </div>
+function sendMsg() {
+const text = input.value.trim();
+if (!text) return;
+if (currentDm) socket.emit('dm', { to: currentDm, text, file: '' });
+else socket.emit('msg', { text, file: '' });
+input.value = '';
+}
 
-    <!-- Модальное окно создания NFT (для админов) -->
-    <div class="modal" id="create-nft-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-magic"></i> Создать NFT</h2>
-                <button class="icon-btn" onclick="closeModal('create-nft-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="create-nft-body">
-                <div class="nft-preview-container">
-                    <img id="nft-preview-img" src="" alt="Preview" style="display:none">
-                    <div id="nft-preview-placeholder">
-                        <i class="fas fa-image"></i>
-                        <span>Выберите изображение</span>
-                    </div>
-                </div>
-                <label class="upload-nft-btn">
-                    <i class="fas fa-upload"></i> Загрузить фото
-                    <input type="file" accept="image/*" onchange="previewNftImage(event)" hidden>
-                </label>
-                <div class="input-group">
-                    <label>Название NFT</label>
-                    <input type="text" id="custom-nft-name" placeholder="Мой крутой NFT">
-                </div>
-                <button class="btn-primary" onclick="createCustomNft()">
-                    <i class="fas fa-plus"></i> Создать NFT
-                </button>
-            </div>
-        </div>
-    </div>
+function addMsg(msg, isOwn) {
+const div = document.createElement('div');
+div.className = 'msg' + (msg.user === username ? ' own' : '');
+const time = new Date(msg.time).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+let fileHtml = '';
+if (msg.file) {
+if (msg.file.startsWith('data:image')) fileHtml = `<img src="${msg.file}" class="file" onclick="window.open(this.src)">`;
+else if (msg.file.startsWith('data:video')) fileHtml = `<video src="${msg.file}" class="file" controls></video>`;
+else fileHtml = `<a href="${msg.file}" class="file-link" download>📎 Файл</a>`;
+}
+div.innerHTML = `<div class="bubble">${msg.text ? `<div class="text">${escapeHtml(msg.text)}</div>` : ''}${fileHtml}</div><div class="meta">${msg.user !== username ? msg.user + ' · ' : ''}${time}</div>`;
+msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
 
-    <!-- Выбор NFT для отправки -->
-    <div class="modal" id="nft-picker-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-image"></i> Отправить NFT</h2>
-                <button class="icon-btn" onclick="closeModal('nft-picker-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="nft-picker-list" class="nft-picker-grid"></div>
-        </div>
-    </div>
+socket.on('msg', (msg) => { if (!currentDm) addMsg(msg); });
+socket.on('sys', (t) => { if (!currentDm) { const d=document.createElement('div'); d.className='sys'; d.textContent=t; msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; } });
+socket.on('history', (h) => { msgs.innerHTML=''; if (h) h.forEach(m => addMsg(m)); });
+socket.on('online', (list) => { users = list; renderList(); });
+socket.on('friend-update', (d) => { userData = d; renderList(); });
+socket.on('dm', (data) => {
+if (currentDm === data.room.split(':').find(u => u !== username)) addMsg(data.msg);
+else { const other = data.room.split(':').find(u => u !== username); if (other) document.querySelectorAll('.item').forEach(el => { if (el.textContent.includes(other)) el.querySelector('.preview').textContent = data.msg.text || '📎 Файл'; }); }
+});
 
-    <!-- Админ: Добавить NFT в магазин -->
-    <div class="modal" id="add-shop-nft-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-plus-circle"></i> Добавить NFT в магазин</h2>
-                <button class="icon-btn" onclick="closeModal('add-shop-nft-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="admin-add-nft-body">
-                <div class="input-group">
-                    <label>Название</label>
-                    <input type="text" id="shop-nft-name" placeholder="Крутой NFT">
-                </div>
-                <div class="input-group">
-                    <label>Картинка</label>
-                    <div class="image-upload-box">
-                        <img id="shop-nft-preview" src="" style="display:none; max-width:100px; max-height:100px; border-radius:8px;">
-                        <input type="text" id="shop-nft-image" placeholder="🎨 эмодзи или URL">
-                        <label class="upload-btn">
-                            <i class="fas fa-upload"></i> Загрузить фото
-                            <input type="file" accept="image/*" onchange="previewNftImage(event)" hidden>
-                        </label>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Цена (котики)</label>
-                    <input type="number" id="shop-nft-price" value="100" min="1">
-                </div>
-                <div class="input-group">
-                    <label>Количество (-1 = безлимит)</label>
-                    <input type="number" id="shop-nft-quantity" value="-1">
-                </div>
-                <div class="input-group">
-                    <label>Редкость</label>
-                    <select id="shop-nft-rarity">
-                        <option value="common">Common</option>
-                        <option value="uncommon">Uncommon</option>
-                        <option value="rare">Rare</option>
-                        <option value="epic">Epic</option>
-                        <option value="legendary">Legendary</option>
-                    </select>
-                </div>
-                <div class="input-group checkbox-group">
-                    <input type="checkbox" id="shop-nft-upgradeable">
-                    <label for="shop-nft-upgradeable">Можно улучшать</label>
-                </div>
-                <div class="input-group checkbox-group">
-                    <input type="checkbox" id="shop-nft-premium">
-                    <label for="shop-nft-premium">⭐ Только для премиум</label>
-                </div>
-                <button class="btn-primary" onclick="addShopNft()">
-                    <i class="fas fa-plus"></i> Добавить в магазин
-                </button>
-            </div>
-        </div>
-    </div>
+// Call system
+let callState = 'idle';
+let localStream = null;
+let pc = null;
+let peerUsername = null;
+let callTimer = null;
+let callSeconds = 0;
+let pendingCandidates = [];
+let micMuted = false;
+let screenStream = null;
 
-    <!-- Админ: Добавить подарок в магазин -->
-    <div class="modal" id="add-shop-gift-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-gift"></i> Добавить подарок</h2>
-                <button class="icon-btn" onclick="closeModal('add-shop-gift-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="admin-add-gift-body">
-                <div class="input-group">
-                    <label>Название</label>
-                    <input type="text" id="shop-gift-name" placeholder="Крутой подарок">
-                </div>
-                <div class="input-group">
-                    <label>Эмодзи</label>
-                    <input type="text" id="shop-gift-emoji" placeholder="🎁" maxlength="4">
-                </div>
-                <div class="input-group">
-                    <label>Картинка (опционально)</label>
-                    <div class="image-upload-box">
-                        <img id="shop-gift-preview" src="" style="display:none; max-width:80px; max-height:80px; border-radius:8px;">
-                        <label class="upload-btn">
-                            <i class="fas fa-upload"></i> Загрузить
-                            <input type="file" accept="image/*" onchange="previewGiftImage(event)" hidden>
-                        </label>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Редкость</label>
-                    <select id="shop-gift-rarity">
-                        <option value="common">Common (Обычный)</option>
-                        <option value="uncommon">Uncommon (Необычный)</option>
-                        <option value="rare">Rare (Редкий)</option>
-                        <option value="epic">Epic (Эпический)</option>
-                        <option value="legendary">Legendary (Легендарный)</option>
-                        <option value="neon">Neon (Неоновый)</option>
-                        <option value="rainbow">Rainbow (Радужный)</option>
-                        <option value="mythic">Mythic (Мифический)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Цена (котики)</label>
-                    <input type="number" id="shop-gift-price" value="50" min="1">
-                </div>
-                <button class="btn-primary" onclick="addShopGift()">
-                    <i class="fas fa-plus"></i> Добавить подарок
-                </button>
-            </div>
-        </div>
-    </div>
+callBtn.onclick = async () => {
+if (callState === 'idle') {
+try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
+catch(e) { alert('Нужен доступ к микрофону!'); return; }
+callState = 'active';
+document.getElementById('call-overlay').classList.add('show');
+document.getElementById('call-name').textContent = 'Звонок в ' + chatName.textContent;
+document.getElementById('call-status').textContent = 'Ожидание...';
+socket.emit('call-start');
+startCallTimer();
+} else endCall();
+};
 
-    <!-- Админ: Редактировать цены -->
-    <div class="modal" id="edit-prices-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-edit"></i> Редактировать цены</h2>
-                <button class="icon-btn" onclick="closeModal('edit-prices-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="edit-prices-list" class="edit-prices-body"></div>
-        </div>
-    </div>
+function showIncomingCall(from) {
+if (confirm(`📞 Звонок от ${from}. Присоединиться?`)) {
+navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(s => {
+localStream = s; peerUsername = from;
+document.getElementById('call-overlay').classList.add('show');
+document.getElementById('call-name').textContent = from;
+document.getElementById('call-status').textContent = 'Соединение...';
+socket.emit('call-join', { callerUsername: from });
+initPC(true);
+callState = 'joined';
+startCallTimer();
+}).catch(() => {});
+}
+}
 
-    <!-- Добавить участника в группу -->
-    <div class="modal" id="add-member-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-user-plus"></i> Добавить участника</h2>
-                <button class="icon-btn" onclick="closeModal('add-member-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="add-member-body">
-                <div class="input-group">
-                    <label>Логин пользователя</label>
-                    <input type="text" id="add-member-username" placeholder="username">
-                </div>
-                <button class="btn-primary" onclick="addMemberToGroup()">
-                    <i class="fas fa-plus"></i> Добавить
-                </button>
-            </div>
-        </div>
-    </div>
+document.getElementById('call-mic').onclick = function() {
+micMuted = !micMuted;
+this.classList.toggle('muted');
+if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = !micMuted);
+};
 
-    <!-- Удаление аккаунта -->
-    <div class="modal" id="delete-account-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-exclamation-triangle"></i> Удаление аккаунта</h2>
-                <button class="icon-btn" onclick="closeModal('delete-account-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="delete-account-body">
-                <p class="warning-text">⚠️ Это действие необратимо! Все ваши данные, подарки и NFT будут удалены.</p>
-                <div class="input-group">
-                    <label>Введите пароль для подтверждения</label>
-                    <input type="password" id="delete-account-password" placeholder="Ваш пароль">
-                </div>
-                <button class="btn-danger" onclick="confirmDeleteAccount()">
-                    <i class="fas fa-trash"></i> Удалить навсегда
-                </button>
-            </div>
-        </div>
-    </div>
+document.getElementById('call-screen').onclick = function() {
+if (screenStream) {
+screenStream.getTracks().forEach(t => t.stop());
+screenStream = null;
+this.classList.remove('active');
+socket.emit('screen-stop');
+if (pc) pc.getSenders().forEach(s => { if (s.track && s.track.kind === 'video') pc.removeTrack(s); });
+return;
+}
+navigator.mediaDevices.getDisplayMedia({ video: true }).then(s => {
+screenStream = s;
+this.classList.add('active');
+socket.emit('screen-start');
+s.getVideoTracks().forEach(t => pc?.addTrack(t, s));
+s.getVideoTracks()[0].onended = () => { screenStream = null; document.getElementById('call-screen').classList.remove('active'); socket.emit('screen-stop'); };
+}).catch(() => {});
+};
 
-    <!-- Создание группы/канала -->
-    <div class="modal" id="create-group-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-users"></i> Создать</h2>
-                <button class="icon-btn" onclick="closeModal('create-group-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="create-group-body">
-                <div class="type-tabs">
-                    <button class="type-tab active" onclick="switchCreateType('group')">👥 Группа</button>
-                    <button class="type-tab" onclick="switchCreateType('channel')">📢 Канал</button>
-                </div>
-                <div class="input-group">
-                    <label>Название</label>
-                    <input type="text" id="create-group-name" placeholder="Название...">
-                </div>
-                <button class="btn-primary" onclick="createGroup()">
-                    <i class="fas fa-plus"></i> Создать
-                </button>
-            </div>
-        </div>
-    </div>
+document.getElementById('call-end').onclick = endCall;
 
-    <!-- Создание канала -->
-    <div class="modal" id="create-channel-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-bullhorn"></i> Создать канал</h2>
-                <button class="icon-btn" onclick="closeModal('create-channel-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="create-channel-body">
-                <div class="input-group">
-                    <label>Название канала</label>
-                    <input type="text" id="create-channel-name" placeholder="Мой канал">
-                </div>
-                <button class="btn-primary" onclick="createChannel()">
-                    <i class="fas fa-plus"></i> Создать
-                </button>
-            </div>
-        </div>
-    </div>
+socket.on('call-started', (d) => { if (d.username !== username && callState === 'idle') { peerUsername = d.username; showIncomingCall(d.username); } });
+socket.on('call-ended', () => { if (callState !== 'idle') endCall(); });
+socket.on('call-joined', (d) => { if (d.username !== username && callState === 'active' && d.callerUsername === username) { peerUsername = d.username; initPC(false); } });
+socket.on('call-signal', async (d) => {
+if (!pc) { if (d.signal.candidate) pendingCandidates.push(d.signal); return; }
+try {
+if (d.signal.type === 'offer') {
+if (pc.signalingState !== 'stable') return;
+await pc.setRemoteDescription(new RTCSessionDescription(d.signal));
+const a = await pc.createAnswer(); await pc.setLocalDescription(a);
+socket.emit('call-signal', { signal: a, toUser: d.fromUser });
+while (pendingCandidates.length) await pc.addIceCandidate(new RTCIceCandidate(pendingCandidates.shift())).catch(()=>{});
+} else if (d.signal.type === 'answer') {
+if (pc.signalingState !== 'have-local-offer') return;
+await pc.setRemoteDescription(new RTCSessionDescription(d.signal));
+while (pendingCandidates.length) await pc.addIceCandidate(new RTCIceCandidate(pendingCandidates.shift())).catch(()=>{});
+} else if (d.signal.candidate) {
+if (pc.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(d.signal));
+else pendingCandidates.push(d.signal);
+}
+} catch(e) {}
+});
 
-    <!-- Скример -->
-    <div class="modal" id="screamer-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-ghost"></i> Отправить скример</h2>
-                <button class="icon-btn" onclick="closeModal('screamer-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="screamer-body">
-                <div class="input-group">
-                    <label>Картинка скримера</label>
-                    <div class="image-upload-box">
-                        <img id="screamer-image-preview" src="" style="display:none; max-width:100px; max-height:100px; border-radius:8px;">
-                        <label class="upload-btn">
-                            <i class="fas fa-image"></i> Выбрать картинку
-                            <input type="file" accept="image/*" onchange="previewScreamerImage(event)" hidden>
-                        </label>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Звук скримера</label>
-                    <div class="audio-upload-box">
-                        <audio id="screamer-audio-preview" controls style="display:none; width:100%;"></audio>
-                        <label class="upload-btn">
-                            <i class="fas fa-music"></i> Выбрать звук
-                            <input type="file" accept="audio/*" onchange="previewScreamerSound(event)" hidden>
-                        </label>
-                    </div>
-                </div>
-                <button class="btn-danger" onclick="sendScreamer()">
-                    <i class="fas fa-ghost"></i> Отправить скример
-                </button>
-            </div>
-        </div>
-    </div>
+function initPC(isAnswerer) {
+if (pc) { pc.close(); pc = null; }
+pendingCandidates = [];
+pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+pc.onicecandidate = (e) => { if (e.candidate && peerUsername) socket.emit('call-signal', { signal: e.candidate, toUser: peerUsername }); };
+pc.oniceconnectionstatechange = () => { if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') { if (callState !== 'idle') { endCall(); } } };
+pc.ontrack = (e) => { const a = document.createElement('audio'); a.srcObject = e.streams[0]; a.autoplay = true; a.volume = 1; a.style.display = 'none'; document.body.appendChild(a); };
+if (!isAnswerer) setTimeout(() => { if (pc) pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => socket.emit('call-signal', { signal: pc.localDescription, toUser: peerUsername })).catch(()=>{}); }, 500);
+}
 
-    <!-- Скример оверлей -->
-    <div class="screamer-overlay" id="screamer-overlay" onclick="closeScreamer()">
-        <img id="screamer-display-image" src="" alt="">
-        <audio id="screamer-display-audio" autoplay></audio>
-    </div>
+function endCall() {
+if (pc) { pc.close(); pc = null; }
+if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+callState = 'idle'; peerUsername = null; pendingCandidates = [];
+document.getElementById('call-overlay').classList.remove('show');
+document.getElementById('call-screen').classList.remove('active');
+stopCallTimer(); socket.emit('call-end');
+document.querySelectorAll('audio').forEach(a => a.remove());
+}
 
-    <!-- Модальное окно инвентаря -->
-    <div class="modal" id="inventory-modal">
-        <div class="modal-content inventory-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-box"></i> Мой инвентарь</h2>
-                <button class="icon-btn" onclick="closeModal('inventory-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="inventory-settings">
-                <label>Цвет фона инвентаря:</label>
-                <input type="color" id="inventory-bg-color" value="#12121a" onchange="changeInventoryColor(this.value)">
-            </div>
-            <div class="inventory-tabs">
-                <button class="inventory-tab active" onclick="switchInventoryTab('gifts')">🎁 Подарки</button>
-                <button class="inventory-tab" onclick="switchInventoryTab('nfts')">🖼 NFT</button>
-            </div>
-            <div class="inventory-grid" id="inventory-grid"></div>
-        </div>
-    </div>
-
-    <!-- Модальное окно просмотра предмета -->
-    <div class="modal" id="item-view-modal">
-        <div class="modal-content item-view-content">
-            <div class="modal-header">
-                <h2 id="item-view-title">Предмет</h2>
-                <button class="icon-btn" onclick="closeModal('item-view-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="item-view-body">
-                <div class="item-view-image" id="item-view-image"></div>
-                <div class="item-view-info">
-                    <div class="item-view-rarity" id="item-view-rarity"></div>
-                    <div class="item-view-from" id="item-view-from"></div>
-                    <div class="item-view-date" id="item-view-date"></div>
-                    <div class="item-view-code" id="item-view-code"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Премиум модальное окно -->
-    <div class="modal" id="premium-modal">
-        <div class="modal-content premium-content">
-            <div class="modal-header">
-                <h2>⭐ Премиум</h2>
-                <button class="icon-btn" onclick="closeModal('premium-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="premium-body">
-                <div class="premium-icon">⭐</div>
-                <h3>Станьте премиум пользователем!</h3>
-                <div class="premium-features">
-                    <div class="premium-feature">✨ Эмодзи и шрифт в нике</div>
-                    <div class="premium-feature">🎨 Эксклюзивные темы</div>
-                    <div class="premium-feature">📦 Двойной ежедневный сундук</div>
-                    <div class="premium-feature">💰 -10% комиссия на рынке</div>
-                    <div class="premium-feature">👻 Отправка скримеров</div>
-                    <div class="premium-feature">🎁 Эксклюзивные подарки</div>
-                    <div class="premium-feature">🖼 Эксклюзивные NFT</div>
-                    <div class="premium-feature">🌈 Rainbow/Neon эффекты</div>
-                </div>
-                <div class="premium-price">
-                    <span class="coin-icon">🐱</span> 1000 котиков
-                </div>
-                <button class="btn-premium" ontouchstart="buyPremium()" onclick="buyPremium()">
-                    ⭐ Купить премиум
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно Мои подарки -->
-    <div class="modal" id="my-gifts-modal">
-        <div class="modal-content inventory-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-gift"></i> Мои подарки</h2>
-                <div class="inventory-color-picker">
-                    <span>Цвет:</span>
-                    <input type="color" id="gifts-inventory-color" value="#12121a" onchange="changeInventoryColor('gifts', this.value)">
-                </div>
-                <button class="icon-btn" onclick="closeModal('my-gifts-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="inventory-tabs">
-                <button class="inv-tab active" onclick="switchInventoryTab('gifts', 'all')">Все</button>
-                <button class="inv-tab" onclick="switchInventoryTab('gifts', 'common')">Обычные</button>
-                <button class="inv-tab" onclick="switchInventoryTab('gifts', 'rare')">Редкие</button>
-                <button class="inv-tab" onclick="switchInventoryTab('gifts', 'legendary')">Легендарные</button>
-            </div>
-            <div class="inventory-info">
-                <span>От кого:</span>
-                <select id="gifts-from-filter" onchange="filterGiftsByFrom()">
-                    <option value="all">Все</option>
-                </select>
-            </div>
-            <div id="my-gifts-grid" class="inventory-grid"></div>
-        </div>
-    </div>
-
-    <!-- Модальное окно Мои NFT -->
-    <div class="modal" id="my-nfts-modal">
-        <div class="modal-content inventory-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-image"></i> Мои NFT</h2>
-                <div class="inventory-color-picker">
-                    <span>Цвет:</span>
-                    <input type="color" id="nfts-inventory-color" value="#12121a" onchange="changeInventoryColor('nfts', this.value)">
-                </div>
-                <button class="icon-btn" onclick="closeModal('my-nfts-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="inventory-tabs">
-                <button class="inv-tab active" onclick="switchInventoryTab('nfts', 'all')">Все</button>
-                <button class="inv-tab" onclick="switchInventoryTab('nfts', 'common')">Common</button>
-                <button class="inv-tab" onclick="switchInventoryTab('nfts', 'rare')">Rare</button>
-                <button class="inv-tab" onclick="switchInventoryTab('nfts', 'legendary')">Legendary</button>
-                <button class="inv-tab" onclick="switchInventoryTab('nfts', 'rainbow')">Rainbow</button>
-            </div>
-            <div class="inventory-info">
-                <span>От кого:</span>
-                <select id="nfts-from-filter" onchange="filterNftsByFrom()">
-                    <option value="all">Все</option>
-                </select>
-            </div>
-            <div id="my-nfts-grid" class="inventory-grid"></div>
-        </div>
-    </div>
-
-    <!-- Модальное окно Мой инвентарь -->
-    <div class="modal" id="my-inventory-modal">
-        <div class="modal-content inventory-content large-inventory">
-            <div class="modal-header">
-                <h2><i class="fas fa-box-open"></i> Мой инвентарь</h2>
-                <div class="inventory-color-picker">
-                    <span>Цвет фона:</span>
-                    <input type="color" id="inventory-bg-color" value="#12121a" onchange="changeInventoryColor('all', this.value)">
-                </div>
-                <button class="icon-btn" onclick="closeModal('my-inventory-modal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="inventory-stats">
-                <div class="inv-stat">
-                    <span class="inv-stat-value" id="inv-total-gifts">0</span>
-                    <span class="inv-stat-label">Подарков</span>
-                </div>
-                <div class="inv-stat">
-                    <span class="inv-stat-value" id="inv-total-nfts">0</span>
-                    <span class="inv-stat-label">NFT</span>
-                </div>
-                <div class="inv-stat">
-                    <span class="inv-stat-value" id="inv-total-value">0</span>
-                    <span class="inv-stat-label">Общая стоимость</span>
-                </div>
-            </div>
-            <div class="inventory-sections">
-                <div class="inv-section">
-                    <h3><i class="fas fa-gift"></i> Подарки</h3>
-                    <div id="inventory-gifts-grid" class="inventory-grid compact"></div>
-                </div>
-                <div class="inv-section">
-                    <h3><i class="fas fa-image"></i> NFT</h3>
-                    <div id="inventory-nfts-grid" class="inventory-grid compact"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Плеер музыки от админа -->
-    <div class="admin-music-player" id="admin-music-player">
-        <div class="player-header">
-            <div class="player-title">
-                <i class="fas fa-music"></i> Музыка от админа
-            </div>
-            <button class="close-player" onclick="closeAdminMusic()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="player-info" id="player-info">Играет...</div>
-        <div class="volume-control">
-            <i class="fas fa-volume-down"></i>
-            <input type="range" id="player-volume" min="0" max="100" value="50" onchange="setPlayerVolume(this.value)">
-            <i class="fas fa-volume-up"></i>
-        </div>
-        <audio id="admin-audio-player" style="display:none"></audio>
-    </div>
-
-    <link rel="stylesheet" href="styles.css">
-    <script src="app.js"></script>
+function startCallTimer() { callSeconds=0; callTimer=setInterval(() => { callSeconds++; const m=String(Math.floor(callSeconds/60)).padStart(2,'0'); const s=String(callSeconds%60).padStart(2,'0'); document.getElementById('call-status').textContent = `${m}:${s}`; }, 1000); }
+function stopCallTimer() { clearInterval(callTimer); callTimer=null; }
+</script>
 </body>
 </html>
