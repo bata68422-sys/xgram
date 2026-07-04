@@ -6,7 +6,10 @@
     <title>XGram — Мессенджер</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <script src="/socket.io/socket.io.js"></script>
+    <script src="calls.js" defer></script>
+    <script src="app.js" defer></script>
 </head>
 <body>
     <!-- Экран обслуживания -->
@@ -592,10 +595,10 @@
             </div>
             
             <div class="incoming-controls" id="incoming-controls" style="display:none">
-                <button class="call-btn reject-btn" onclick="rejectCall()">
+                <button class="call-btn reject-btn" onclick="rejectIncomingCall()">
                     <i class="fas fa-phone-slash"></i>
                 </button>
-                <button class="call-btn accept-btn" onclick="acceptCall()">
+                <button class="call-btn accept-btn" onclick="acceptIncomingCall()">
                     <i class="fas fa-phone"></i>
                 </button>
             </div>
