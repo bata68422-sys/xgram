@@ -119,6 +119,12 @@ function isAdmin(username) {
 io.on('connection', (socket) => {
     let currentUser = null;
 
+    // Проверка существования пользователя
+    socket.on('check_user_exists', (username) => {
+        const exists = !!db.users[username];
+        socket.emit('user_exists', { username, exists });
+    });
+
     // Регистрация
     socket.on('register', ({ username, password, displayName }) => {
         if (db.users[username]) {

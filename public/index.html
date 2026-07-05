@@ -727,6 +727,12 @@
         .font-bold { font-weight: 800; }
         .font-italic { font-style: italic; font-weight: 600; }
         
+        /* Auto-login spinner */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
         /* Premium badge */
         .premium-badge {
             display: inline-block;
@@ -859,6 +865,11 @@
                     <input type="text" id="login-username" placeholder="Введите имя" autofocus>
                 </div>
                 <button class="btn btn-primary" onclick="doAutoLogin()">Войти</button>
+            </div>
+            <div id="auto-login-loading" style="display:none;text-align:center">
+                <div style="font-size:3rem;margin-bottom:1rem;animation:spin 1s linear infinite">⚡</div>
+                <h2 class="auth-title">Автоматический вход</h2>
+                <p class="auth-subtitle">Подключение к вашему аккаунту...</p>
             </div>
         </div>
     </div>
@@ -1110,27 +1121,63 @@ let callTarget = null;
 let isAdmin = false;
 
 // ===================== AUTH =====================
+// Проверка сохранённой сессии при загрузке
+window.addEventListener('DOMContentLoaded', () => {
+    const savedUsername = localStorage.getItem('xgram_username');
+    const savedPassword = localStorage.getItem('xgram_password');
+    
+    if (savedUsername && savedPassword) {
+        // Показываем индикатор загрузки
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('auto-login-loading').style.display = 'block';
+        
+        // Автоматически входим
+        setTimeout(() => {
+            socket.emit('login', { username: savedUsername, password: savedPassword });
+        }, 500);
+    }
+});
+
 function doAutoLogin() {
     const username = document.getElementById('login-username').value.trim();
     if (!username) return notify('Введите имя', 'error');
+    if (username.length < 2) return notify('Имя должно быть минимум 2 символа', 'error');
     
-    // Генерируем случайный пароль
-    const password = Math.random().toString(36).substring(2, 15);
-    
-    // Сначала пытаемся войти
-    socket.emit('login', { username, password: username + '_pass' });
-    
-    // Если не получится, сразу регистрируем
-    setTimeout(() => {
-        socket.emit('register', { username, password: username + '_pass', displayName: username });
-    }, 100);
+    // Проверяем существование пользователя
+    socket.emit('check_user_exists', username);
 }
 
+// Обработка проверки существования пользователя
+socket.on('user_exists', ({ username, exists }) => {
+    const password = username + '_pass';
+    
+    if (exists) {
+        // Пользователь существует - входим
+        socket.emit('login', { username, password });
+    } else {
+        // Пользователя нет - создаём и входим
+        socket.emit('register', { username, password, displayName: username });
+        setTimeout(() => {
+            socket.emit('login', { username, password });
+        }, 200);
+    }
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('xgram_username', username);
+    localStorage.setItem('xgram_password', password);
+});
+
 function logout() {
+    // Удаляем сохранённые данные
+    localStorage.removeItem('xgram_username');
+    localStorage.removeItem('xgram_password');
+    
     currentUser = null; friends = []; messages = {}; groups = [];
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('main-app').style.display = 'none';
     closeModal('profile-modal');
+    
+    notify('Вы вышли из аккаунта', 'success');
 }
 
 // ===================== SOCKET AUTH EVENTS =====================
@@ -1145,8 +1192,20 @@ socket.on('login_success', (data) => {
     socket.emit('get_my_groups');
     if (isAdmin) addAdminTab();
     notify('Добро пожаловать, ' + data.displayName + '!', 'success');
+    playSound('success');
 });
-socket.on('login_error', (msg) => notify(msg, 'error'));
+socket.on('login_error', (msg) => {
+    // Если автологин не удался - показываем форму входа
+    document.getElementById('login-form').style.display = 'block';
+    document.getElementById('auto-login-loading').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    
+    // Очищаем сохранённые данные если они неверны
+    localStorage.removeItem('xgram_username');
+    localStorage.removeItem('xgram_password');
+    
+    notify(msg, 'error');
+});
 socket.on('register_success', () => { notify('Аккаунт создан!', 'success'); showLogin(); });
 socket.on('register_error', (msg) => notify(msg, 'error'));
 socket.on('you_are_banned', () => { notify('Ваш аккаунт заблокирован', 'error'); logout(); });
