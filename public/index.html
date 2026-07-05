@@ -522,8 +522,12 @@
         .call-btn.end:hover { background: #cc0000; }
         .call-btn.mute { background: var(--surface2); color: var(--text); }
         .call-btn.mute:hover { background: var(--border); }
+        .call-btn.mute.muted { background: var(--danger); color: white; }
         .call-btn.accept { background: var(--success); color: white; }
         .call-btn.accept:hover { background: #00b070; }
+        .call-btn.screen { background: var(--surface2); color: var(--text); }
+        .call-btn.screen:hover { background: var(--border); }
+        .call-btn.screen.sharing { background: var(--accent); color: white; }
         video { display: none; }
         /* Notification */
         .notification {
@@ -720,36 +724,13 @@
     <div class="auth-panel">
         <div class="auth-container">
             <div id="login-form">
-                <h2 class="auth-title">С возвращением</h2>
-                <p class="auth-subtitle">Войдите в свой аккаунт</p>
+                <h2 class="auth-title">Добро пожаловать</h2>
+                <p class="auth-subtitle">Введите имя для входа</p>
                 <div class="input-group">
-                    <label>Логин</label>
-                    <input type="text" id="login-username" placeholder="Ваш логин">
+                    <label>Ваше имя</label>
+                    <input type="text" id="login-username" placeholder="Введите имя" autofocus>
                 </div>
-                <div class="input-group">
-                    <label>Пароль</label>
-                    <input type="password" id="login-password" placeholder="••••••••">
-                </div>
-                <button class="btn btn-primary" onclick="doLogin()">Войти</button>
-                <div class="auth-switch">Нет аккаунта? <a onclick="showRegister()">Создать</a></div>
-            </div>
-            <div id="register-form" style="display:none">
-                <h2 class="auth-title">Создать аккаунт</h2>
-                <p class="auth-subtitle">Присоединитесь к XGram</p>
-                <div class="input-group">
-                    <label>Логин</label>
-                    <input type="text" id="reg-username" placeholder="Уникальный логин">
-                </div>
-                <div class="input-group">
-                    <label>Имя для отображения</label>
-                    <input type="text" id="reg-display" placeholder="Ваше имя">
-                </div>
-                <div class="input-group">
-                    <label>Пароль</label>
-                    <input type="password" id="reg-password" placeholder="••••••••">
-                </div>
-                <button class="btn btn-primary" onclick="doRegister()">Создать аккаунт</button>
-                <div class="auth-switch">Уже есть аккаунт? <a onclick="showLogin()">Войти</a></div>
+                <button class="btn btn-primary" onclick="doAutoLogin()">Войти</button>
             </div>
         </div>
     </div>
@@ -804,12 +785,35 @@
     <div class="call-name" id="call-name">Имя</div>
     <div class="call-status" id="call-status">Звонит...</div>
     <div class="call-controls" id="call-controls">
-        <button class="call-btn accept" id="call-accept-btn" onclick="acceptCall()" title="Принять">📞</button>
-        <button class="call-btn mute" id="call-mute-btn" onclick="toggleMute()" title="Мут">🎤</button>
-        <button class="call-btn end" onclick="endCall()" title="Завершить">📵</button>
+        <button class="call-btn accept" id="call-accept-btn" onclick="acceptCall()" title="Принять">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+        </button>
+        <button class="call-btn mute" id="call-mute-btn" onclick="toggleMute()" title="Микрофон">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+        </button>
+        <button class="call-btn screen" id="call-screen-btn" onclick="toggleScreenShare()" title="Демонстрация экрана">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+        </button>
+        <button class="call-btn end" onclick="endCall()" title="Завершить">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M23.1 10.2l-1.4-1.3c-1-.9-2.7-1-3.7-.1-1 .9-1.1 2.5-.2 3.6l.7.8c-1.3 1.3-2.8 2.4-4.4 3.2l-.8-.7c-1-.9-2.7-1-3.7-.1-1 .9-1.1 2.5-.2 3.6l1.4 1.3c1 .9 2.6 1 3.7.1l.1-.1c3.9-3.4 6.9-7.9 8.8-13 .2-.6.1-1.2-.3-1.7-.4-.4-1-.6-1.5-.4z"></path>
+                <path d="M.9 10.2l1.4-1.3c1-.9 2.7-1 3.7-.1 1 .9 1.1 2.5.2 3.6l-.7.8c1.3 1.3 2.8 2.4 4.4 3.2l.8-.7c1-.9 2.7-1 3.7-.1 1 .9 1.1 2.5.2 3.6l-1.4 1.3c-1 .9-2.6 1-3.7.1l-.1-.1C5.5 17.1 2.5 12.6.6 7.5c-.2-.6-.1-1.2.3-1.7.4-.4 1-.6 1.5-.4z"></path>
+            </svg>
+        </button>
     </div>
-    <video id="local-video" autoplay muted playsinline></video>
-    <video id="remote-video" autoplay playsinline></video>
+    <video id="local-video" autoplay muted playsinline style="display:none"></video>
+    <video id="remote-video" autoplay playsinline style="display:none"></video>
 </div>
 
 <!-- Profile Modal -->
@@ -884,8 +888,16 @@
             </div>
         </div>
         <div class="input-group">
-            <label>🌟 Премиум функции <span id="premium-badge" style="font-size:0.8rem;color:var(--text-dim)"></span></label>
-            <div id="premium-section"></div>
+            <label>Стиль ника</label>
+            <select id="nick-font" style="width:100%;padding:0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)">
+                <option value="">Обычный</option>
+                <option value="font-gradient">Градиент</option>
+                <option value="font-glow">Свечение</option>
+                <option value="font-neon">Неон</option>
+                <option value="font-rainbow">Радуга</option>
+                <option value="font-bold">Жирный</option>
+                <option value="font-italic">Курсив</option>
+            </select>
         </div>
         <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:1rem">Сохранить</button>
         <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Закрыть</button>
@@ -962,27 +974,22 @@ let callTarget = null;
 let isAdmin = false;
 
 // ===================== AUTH =====================
-function showRegister() {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('register-form').style.display = 'block';
-}
-function showLogin() {
-    document.getElementById('register-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
-}
-function doLogin() {
+function doAutoLogin() {
     const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    if (!username || !password) return notify('Заполните все поля', 'error');
-    socket.emit('login', { username, password });
+    if (!username) return notify('Введите имя', 'error');
+    
+    // Генерируем случайный пароль
+    const password = Math.random().toString(36).substring(2, 15);
+    
+    // Сначала пытаемся войти
+    socket.emit('login', { username, password: username + '_pass' });
+    
+    // Если не получится, сразу регистрируем
+    setTimeout(() => {
+        socket.emit('register', { username, password: username + '_pass', displayName: username });
+    }, 100);
 }
-function doRegister() {
-    const username = document.getElementById('reg-username').value.trim();
-    const displayName = document.getElementById('reg-display').value.trim();
-    const password = document.getElementById('reg-password').value;
-    if (!username || !password) return notify('Заполните все поля', 'error');
-    socket.emit('register', { username, password, displayName });
-}
+
 function logout() {
     currentUser = null; friends = []; messages = {}; groups = [];
     document.getElementById('auth-screen').style.display = 'flex';
@@ -1050,13 +1057,12 @@ function renderChatList() {
         item.className = 'chat-item' + (currentChat?.id === f.username ? ' active' : '');
         const lastMsg = getLastMessage(f.username);
         const nickClass = f.nickFont || '';
-        const premiumBadge = f.premium ? '<span class="premium-badge">★</span>' : '';
         item.innerHTML = `
             <div class="avatar" style="${f.avatar ? 'background:url(' + f.avatar + ') center/cover no-repeat' : ''}">
                 ${f.avatar ? '' : (f.displayName || f.username)[0].toUpperCase()}
             </div>
             <div class="chat-info">
-                <div class="chat-name"><span class="${nickClass}">${f.displayName || f.username}</span>${premiumBadge}</div>
+                <div class="chat-name"><span class="${nickClass}">${f.displayName || f.username}</span></div>
                 <div class="user-status">
                     <div class="online-dot" style="background:${f.online ? 'var(--success)' : 'var(--border)'}"></div>
                     <span class="chat-preview">${lastMsg}</span>
@@ -1166,6 +1172,7 @@ function sendMessage() {
         socket.emit('send_group_message', { groupId: currentChat.id, text });
     }
     input.value = '';
+    playSound('send');
 }
 
 function escapeHtml(t) {
@@ -1402,46 +1409,16 @@ function showSettings() {
     document.getElementById('settings-display-name').value = currentUser.displayName || '';
     document.getElementById('settings-status').value = currentUser.status || '';
     document.getElementById('settings-avatar').value = currentUser.avatar || '';
-    
-    // Показываем премиум секцию
-    const premiumSection = document.getElementById('premium-section');
-    const premiumBadge = document.getElementById('premium-badge');
-    
-    if (currentUser.premium) {
-        premiumBadge.innerHTML = '<span class="premium-badge">PREMIUM</span>';
-        premiumSection.innerHTML = `
-            <div style="margin-bottom:0.8rem">
-                <label style="font-size:0.85rem;margin-bottom:0.5rem;display:block">Стиль ника</label>
-                <select id="nick-font" style="width:100%;padding:0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)">
-                    <option value="">Обычный</option>
-                    <option value="font-gradient">Градиент</option>
-                    <option value="font-glow">Свечение</option>
-                    <option value="font-neon">Неон</option>
-                    <option value="font-rainbow">Радуга</option>
-                    <option value="font-bold">Жирный</option>
-                    <option value="font-italic">Курсив</option>
-                </select>
-            </div>`;
-        document.getElementById('nick-font').value = currentUser.nickFont || '';
-    } else {
-        premiumBadge.textContent = '(Недоступно)';
-        premiumSection.innerHTML = `
-            <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.8rem">
-                Получите премиум для кастомизации ника с градиентами и эффектами!
-            </p>
-            <button class="btn btn-primary" onclick="buyPremium()" style="padding:0.6rem;font-size:0.85rem">
-                Купить Premium за 500 🐱
-            </button>`;
-    }
-    
+    document.getElementById('nick-font').value = currentUser.nickFont || '';
     showModal('settings-modal');
+    playSound('open');
 }
 
 function saveSettings() {
     const displayName = document.getElementById('settings-display-name').value.trim();
     const status = document.getElementById('settings-status').value.trim();
     const avatar = document.getElementById('settings-avatar').value.trim();
-    const nickFont = document.getElementById('nick-font') ? document.getElementById('nick-font').value : '';
+    const nickFont = document.getElementById('nick-font').value;
     
     socket.emit('update_profile', { displayName, status, avatar, nickFont });
     if (displayName) currentUser.displayName = displayName;
@@ -1449,6 +1426,7 @@ function saveSettings() {
     if (avatar !== undefined) currentUser.avatar = avatar;
     if (nickFont !== undefined) currentUser.nickFont = nickFont;
     notify('Настройки сохранены', 'success');
+    playSound('success');
     closeModal('settings-modal');
     renderChatList();
     renderFriendsList();
@@ -1538,23 +1516,27 @@ function sellNft(i) {
     socket.emit('sell_nft', i);
 }
 
-function buyPremium() {
-    if (!currentUser) return;
-    if (currentUser.coins < 500) {
-        return notify('Недостаточно котиков! Нужно 500 🐱', 'error');
-    }
-    if (confirm('Купить Premium за 500 🐱?')) {
-        socket.emit('buy_premium');
+// ===================== ЗВУКИ =====================
+const sounds = {
+    click: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE='),
+    open: new Audio('data:audio/wav;base64,UklGRl4FAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ4FAACBhY6Sj4+Eg3x4dHFubWtpaWlpamttb3J2e4CFi5GYn6aqsLa8wcbLz9PX2t3g4uTm5+jp6uvs7O3t7e3t7u7u7u7u7u7u7u7t7e3t7ezt7Ozr6+rp6Obl5OPh397c2djW09DMyMTAvru3sqymnpmTjYaCfHZwaWNeWFNOR0A6NC4o'),
+    success: new Audio('data:audio/wav;base64,UklGRl4FAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ4FAACBhYqPk5icoKSnq62wsbO0tbW2tra2trW1tLOysK6sqaajn5uXk46JhIB7dnFsZ2JdWFNOS0hFQ0E/PT08Ozo5ODg3Njc2Njc3ODk6Oz0+QEJERkhLTVBTVVldYWRobG9zdni7v8PKztLV2dze4ePl5+nr7O3u7/Dx8fLy8/Pz8/Pz8/Pz8vLy8fHw7+7t7Orpd3h5fH+ChYiLjpCTlpial5qcn6KkpqiqrK6vsLGys7S0tLS0tLOzsrGwr62rqainpKGempeUkY6KhoJ+enZybmplYV1ZVVFNSUVBPTk1MS0p'),
+    send: new Audio('data:audio/wav;base64,UklGRl4FAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ4FAACBgoSGiImKi4yNjo+QkZKTk5SVlZaXl5iYmZmampmZmZiYl5aVlJOSkZCPjo2Mi4qJiIaEgoB+fHp4dnRycG5samdlY2FfXVtZV1VTUVBOTUxLSklJSEhISEhJSUpLTE1OUFFTVVdZW11fYWNlZ2lrbG5wcnR2eHp8fn+Bg4WGiImKi4yNjo+PkJGSk5OUlJWVlpaWl5eXl5eXl5aWlZWUk5KRkI+OjYyKiYeGhIKAfn17eXd1c3FvbWtpaWdlZGJhX15dXFtaWllZWFlYWFhYWVlaW11eX2FiZGVnaWttb3F0d3p9gIKEhoeJiouMjI2Oj5CQkZGSkpOTk5OTk5OTkpKRkZCQj46NjIqJh4aEgoB+e3l3dXNxb21ramhnZWRiYV9eXVxbWllZWFhYWFhZWVpbXV5gYWNkZmhqa213eXt+gIKEhoeIiYqLi4yMjY2Ojo6Ojo6OjY2MjIuKiYiHhoWDgX9+fHp4dnRycG5sam==')
+};
+
+function playSound(type) {
+    if (sounds[type]) {
+        sounds[type].currentTime = 0;
+        sounds[type].volume = 0.3;
+        sounds[type].play().catch(() => {});
     }
 }
 
-socket.on('premium_activated', (data) => {
-    notify('🌟 Premium активирован!', 'success');
-    currentUser.premium = true;
-    currentUser.coins = data.newBalance;
-    const shopCoins = document.getElementById('shop-coins');
-    if (shopCoins) shopCoins.textContent = '🐱 ' + data.newBalance;
-    closeModal('settings-modal');
+// Добавляем звуки к кнопкам
+document.addEventListener('click', (e) => {
+    if (e.target.matches('button, .btn, .icon-btn, .tab, .chat-item')) {
+        playSound('click');
+    }
 });
 
 socket.on('purchase_success', (data) => {
@@ -1612,73 +1594,174 @@ socket.on('gift_received', (data) => {
 });
 // ===================== CALLS (WebRTC) =====================
 const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let screenStream = null;
+let isScreenSharing = false;
 
 async function startCall(targetUser) {
     callTarget = targetUser;
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
-    peerConnection = new RTCPeerConnection(ICE_SERVERS);
-    if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-    peerConnection.onicecandidate = e => { if (e.candidate) socket.emit('ice_candidate', { to: targetUser, candidate: e.candidate }); };
-    peerConnection.ontrack = e => {
-        const remoteVideo = document.getElementById('remote-video');
-        remoteVideo.srcObject = e.streams[0];
-        document.getElementById('call-status').textContent = 'Звонок идёт...';
-    };
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit('call_offer', { to: targetUser, offer });
-    showCallScreen(targetUser, 'Вызов...', false);
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        peerConnection = new RTCPeerConnection(ICE_SERVERS);
+        if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+        
+        peerConnection.onicecandidate = e => { 
+            if (e.candidate) socket.emit('ice_candidate', { to: targetUser, candidate: e.candidate }); 
+        };
+        
+        peerConnection.ontrack = e => {
+            const remoteVideo = document.getElementById('remote-video');
+            if (remoteVideo) {
+                remoteVideo.srcObject = e.streams[0];
+                remoteVideo.style.display = 'block';
+            }
+            document.getElementById('call-status').textContent = 'Звонок идёт...';
+            playSound('success');
+        };
+        
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('call_offer', { to: targetUser, offer });
+        showCallScreen(targetUser, 'Вызов...', false);
+        playSound('open');
+    } catch(err) {
+        notify('Ошибка доступа к микрофону: ' + err.message, 'error');
+    }
 }
 
 socket.on('call_offer', async ({ from, offer }) => {
     callTarget = from;
     showCallScreen(from, 'Входящий звонок', true);
-    peerConnection = new RTCPeerConnection(ICE_SERVERS);
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
-    if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-    peerConnection.onicecandidate = e => { if (e.candidate) socket.emit('ice_candidate', { to: from, candidate: e.candidate }); };
-    peerConnection.ontrack = e => {
-        document.getElementById('remote-video').srcObject = e.streams[0];
-        document.getElementById('call-status').textContent = 'Звонок идёт...';
-    };
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    peerConnection._pendingOffer = offer;
-    peerConnection._from = from;
+    try {
+        peerConnection = new RTCPeerConnection(ICE_SERVERS);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+        
+        peerConnection.onicecandidate = e => { 
+            if (e.candidate) socket.emit('ice_candidate', { to: from, candidate: e.candidate }); 
+        };
+        
+        peerConnection.ontrack = e => {
+            const remoteVideo = document.getElementById('remote-video');
+            if (remoteVideo) {
+                remoteVideo.srcObject = e.streams[0];
+                remoteVideo.style.display = 'block';
+            }
+            document.getElementById('call-status').textContent = 'Звонок идёт...';
+        };
+        
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    } catch(err) {
+        notify('Ошибка звонка: ' + err.message, 'error');
+    }
 });
 
 async function acceptCall() {
-    document.getElementById('call-accept-btn').style.display = 'none';
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    socket.emit('call_answer', { to: callTarget, answer });
-    document.getElementById('call-status').textContent = 'Подключение...';
+    try {
+        document.getElementById('call-accept-btn').style.display = 'none';
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('call_answer', { to: callTarget, answer });
+        document.getElementById('call-status').textContent = 'Подключено';
+        playSound('success');
+    } catch(err) {
+        notify('Ошибка при приёме звонка', 'error');
+    }
 }
 
 socket.on('call_answer', async ({ from, answer }) => {
-    await peerConnection?.setRemoteDescription(new RTCSessionDescription(answer));
+    try {
+        await peerConnection?.setRemoteDescription(new RTCSessionDescription(answer));
+        document.getElementById('call-status').textContent = 'Подключено';
+    } catch(err) {
+        console.error('Error setting remote description:', err);
+    }
 });
+
 socket.on('ice_candidate', async ({ from, candidate }) => {
-    await peerConnection?.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+    try {
+        await peerConnection?.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch(err) {
+        console.error('Error adding ICE candidate:', err);
+    }
 });
+
 socket.on('call_ended', () => {
     hideCallScreen();
     notify('Звонок завершён', 'success');
 });
 
 function endCall() {
-    socket.emit('end_call', { to: callTarget });
+    if (callTarget) socket.emit('end_call', { to: callTarget });
     localStream?.getTracks().forEach(t => t.stop());
+    screenStream?.getTracks().forEach(t => t.stop());
     peerConnection?.close();
     peerConnection = null;
     localStream = null;
+    screenStream = null;
+    isScreenSharing = false;
     hideCallScreen();
+    playSound('click');
 }
 
 function toggleMute() {
     if (!localStream) return;
     myMuted = !myMuted;
     localStream.getAudioTracks().forEach(t => t.enabled = !myMuted);
-    document.getElementById('call-mute-btn').textContent = myMuted ? '🔇' : '🎤';
+    const btn = document.getElementById('call-mute-btn');
+    if (myMuted) {
+        btn.classList.add('muted');
+    } else {
+        btn.classList.remove('muted');
+    }
+    playSound('click');
+}
+
+async function toggleScreenShare() {
+    const btn = document.getElementById('call-screen-btn');
+    
+    if (!isScreenSharing) {
+        try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                video: { mediaSource: 'screen' },
+                audio: false 
+            });
+            
+            const videoTrack = screenStream.getVideoTracks()[0];
+            
+            // Заменяем видео трек в peer connection
+            const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+            if (sender) {
+                sender.replaceTrack(videoTrack);
+            } else {
+                peerConnection?.addTrack(videoTrack, screenStream);
+            }
+            
+            videoTrack.onended = () => {
+                toggleScreenShare();
+            };
+            
+            isScreenSharing = true;
+            btn.classList.add('sharing');
+            notify('Демонстрация экрана началась', 'success');
+            playSound('success');
+        } catch(err) {
+            notify('Не удалось начать демонстрацию экрана', 'error');
+        }
+    } else {
+        screenStream?.getTracks().forEach(t => t.stop());
+        
+        // Возвращаем аудио или убираем видео
+        const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) {
+            peerConnection?.removeTrack(sender);
+        }
+        
+        screenStream = null;
+        isScreenSharing = false;
+        btn.classList.remove('sharing');
+        notify('Демонстрация экрана остановлена', 'success');
+        playSound('click');
+    }
 }
 
 function showCallScreen(username, status, incoming) {
@@ -1692,7 +1775,10 @@ function showCallScreen(username, status, incoming) {
 
 function hideCallScreen() {
     document.getElementById('call-screen').classList.remove('active');
+    const remoteVideo = document.getElementById('remote-video');
+    if (remoteVideo) remoteVideo.style.display = 'none';
     callTarget = null;
+}
 }
 // ===================== ADMIN PANEL =====================
 function openAdminPanel() {
@@ -1795,8 +1881,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===================== ENTER TO LOGIN =====================
-document.getElementById('login-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doAutoLogin(); });
 </script>
 </body>
 </html>
