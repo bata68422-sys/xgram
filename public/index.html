@@ -1169,14 +1169,12 @@ function showLogin() {
     document.getElementById('login-form').style.display = 'block';
     document.getElementById('register-form').style.display = 'none';
     document.getElementById('auto-login-loading').style.display = 'none';
-    playSound('click');
 }
 
 function showRegister() {
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('register-form').style.display = 'block';
     document.getElementById('auto-login-loading').style.display = 'none';
-    playSound('click');
 }
 
 function doLogin() {
@@ -1238,7 +1236,6 @@ socket.on('login_success', (data) => {
     socket.emit('get_my_groups');
     if (isAdmin) addAdminTab();
     notify('Добро пожаловать, ' + data.displayName + '!', 'success');
-    playSound('success');
 });
 socket.on('login_error', (msg) => {
     // Если автологин не удался - показываем форму входа
@@ -1255,7 +1252,6 @@ socket.on('login_error', (msg) => {
 });
 socket.on('register_success', () => { 
     notify('Аккаунт создан! Входим...', 'success'); 
-    playSound('success');
     // Автоматически входим после регистрации
     const username = localStorage.getItem('xgram_username');
     const password = localStorage.getItem('xgram_password');
