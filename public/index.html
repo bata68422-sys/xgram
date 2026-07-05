@@ -1133,6 +1133,66 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+// ===================== AUTH FUNCTIONS (FIRST!) =====================
+function showLogin() {
+    document.getElementById('login-form').style.display = 'block';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('auto-login-loading').style.display = 'none';
+}
+
+function showRegister() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'block';
+    document.getElementById('auto-login-loading').style.display = 'none';
+}
+
+function doLogin() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    
+    if (!username) return alert('Введите логин');
+    if (!password) return alert('Введите пароль');
+    
+    // Входим
+    socket.emit('login', { username, password });
+    
+    // Сохраняем в localStorage для автовхода
+    localStorage.setItem('xgram_username', username);
+    localStorage.setItem('xgram_password', password);
+}
+
+function doRegister() {
+    const username = document.getElementById('register-username').value.trim();
+    const displayName = document.getElementById('register-displayname').value.trim();
+    const password = document.getElementById('register-password').value.trim();
+    
+    if (!username) return alert('Введите логин');
+    if (username.length < 3) return alert('Логин минимум 3 символа');
+    if (!displayName) return alert('Введите имя для отображения');
+    if (!password) return alert('Введите пароль');
+    if (password.length < 4) return alert('Пароль минимум 4 символа');
+    
+    // Отправляем регистрацию
+    socket.emit('register', { username, password, displayName });
+    
+    // Сохраняем для автовхода
+    localStorage.setItem('xgram_username', username);
+    localStorage.setItem('xgram_password', password);
+}
+
+function logout() {
+    // Удаляем сохранённые данные
+    localStorage.removeItem('xgram_username');
+    localStorage.removeItem('xgram_password');
+    
+    currentUser = null; friends = []; messages = {}; groups = [];
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('main-app').style.display = 'none';
+    closeModal('profile-modal');
+    
+    alert('Вы вышли из аккаунта');
+}
+
 // ===================== STATE =====================
 const socket = io();
 let currentUser = null;
@@ -1164,65 +1224,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 500);
     }
 });
-
-function showLogin() {
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('register-form').style.display = 'none';
-    document.getElementById('auto-login-loading').style.display = 'none';
-}
-
-function showRegister() {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('register-form').style.display = 'block';
-    document.getElementById('auto-login-loading').style.display = 'none';
-}
-
-function doLogin() {
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value.trim();
-    
-    if (!username) return notify('Введите логин', 'error');
-    if (!password) return notify('Введите пароль', 'error');
-    
-    // Входим
-    socket.emit('login', { username, password });
-    
-    // Сохраняем в localStorage для автовхода
-    localStorage.setItem('xgram_username', username);
-    localStorage.setItem('xgram_password', password);
-}
-
-function doRegister() {
-    const username = document.getElementById('register-username').value.trim();
-    const displayName = document.getElementById('register-displayname').value.trim();
-    const password = document.getElementById('register-password').value.trim();
-    
-    if (!username) return notify('Введите логин', 'error');
-    if (username.length < 3) return notify('Логин минимум 3 символа', 'error');
-    if (!displayName) return notify('Введите имя для отображения', 'error');
-    if (!password) return notify('Введите пароль', 'error');
-    if (password.length < 4) return notify('Пароль минимум 4 символа', 'error');
-    
-    // Отправляем регистрацию
-    socket.emit('register', { username, password, displayName });
-    
-    // Сохраняем для автовхода
-    localStorage.setItem('xgram_username', username);
-    localStorage.setItem('xgram_password', password);
-}
-
-function logout() {
-    // Удаляем сохранённые данные
-    localStorage.removeItem('xgram_username');
-    localStorage.removeItem('xgram_password');
-    
-    currentUser = null; friends = []; messages = {}; groups = [];
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
-    closeModal('profile-modal');
-    
-    notify('Вы вышли из аккаунта', 'success');
-}
 
 // ===================== SOCKET AUTH EVENTS =====================
 socket.on('login_success', (data) => {
