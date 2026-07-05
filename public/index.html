@@ -858,13 +858,17 @@
     <div class="auth-panel">
         <div class="auth-container">
             <div id="login-form">
-                <h2 class="auth-title">Добро пожаловать</h2>
-                <p class="auth-subtitle">Введите имя для входа</p>
+                <h2 class="auth-title">Вход</h2>
+                <p class="auth-subtitle">Войдите в свой аккаунт</p>
                 <div class="input-group">
-                    <label>Ваше имя</label>
-                    <input type="text" id="login-username" placeholder="Введите имя" autofocus>
+                    <label>Логин</label>
+                    <input type="text" id="login-username" placeholder="Ваш логин" autofocus>
                 </div>
-                <button class="btn btn-primary" onclick="doAutoLogin()">Войти</button>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" id="login-password" placeholder="Ваш пароль">
+                </div>
+                <button class="btn btn-primary" onclick="doLogin()">Войти</button>
                 <div class="auth-switch">
                     Нет аккаунта? <a onclick="showRegister()">Зарегистрироваться</a>
                 </div>
@@ -874,7 +878,7 @@
                 <p class="auth-subtitle">Создайте новый аккаунт</p>
                 <div class="input-group">
                     <label>Логин</label>
-                    <input type="text" id="register-username" placeholder="Ваш логин">
+                    <input type="text" id="register-username" placeholder="Придумайте логин">
                 </div>
                 <div class="input-group">
                     <label>Имя для отображения</label>
@@ -1175,13 +1179,19 @@ function showRegister() {
     playSound('click');
 }
 
-function doAutoLogin() {
+function doLogin() {
     const username = document.getElementById('login-username').value.trim();
-    if (!username) return notify('Введите имя', 'error');
-    if (username.length < 2) return notify('Имя должно быть минимум 2 символа', 'error');
+    const password = document.getElementById('login-password').value.trim();
     
-    // Проверяем существование пользователя
-    socket.emit('check_user_exists', username);
+    if (!username) return notify('Введите логин', 'error');
+    if (!password) return notify('Введите пароль', 'error');
+    
+    // Входим
+    socket.emit('login', { username, password });
+    
+    // Сохраняем в localStorage для автовхода
+    localStorage.setItem('xgram_username', username);
+    localStorage.setItem('xgram_password', password);
 }
 
 function doRegister() {
@@ -1202,26 +1212,6 @@ function doRegister() {
     localStorage.setItem('xgram_username', username);
     localStorage.setItem('xgram_password', password);
 }
-
-// Обработка проверки существования пользователя
-socket.on('user_exists', ({ username, exists }) => {
-    const password = username + '_pass';
-    
-    if (exists) {
-        // Пользователь существует - входим
-        socket.emit('login', { username, password });
-    } else {
-        // Пользователя нет - создаём и входим
-        socket.emit('register', { username, password, displayName: username });
-        setTimeout(() => {
-            socket.emit('login', { username, password });
-        }, 200);
-    }
-    
-    // Сохраняем в localStorage
-    localStorage.setItem('xgram_username', username);
-    localStorage.setItem('xgram_password', password);
-});
 
 function logout() {
     // Удаляем сохранённые данные
@@ -2203,7 +2193,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===================== ENTER TO LOGIN =====================
-document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doAutoLogin(); });
+document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('register-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
 document.getElementById('register-displayname')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
 document.getElementById('register-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
