@@ -865,6 +865,29 @@
                     <input type="text" id="login-username" placeholder="Введите имя" autofocus>
                 </div>
                 <button class="btn btn-primary" onclick="doAutoLogin()">Войти</button>
+                <div class="auth-switch">
+                    Нет аккаунта? <a onclick="showRegister()">Зарегистрироваться</a>
+                </div>
+            </div>
+            <div id="register-form" style="display:none">
+                <h2 class="auth-title">Регистрация</h2>
+                <p class="auth-subtitle">Создайте новый аккаунт</p>
+                <div class="input-group">
+                    <label>Логин</label>
+                    <input type="text" id="register-username" placeholder="Ваш логин">
+                </div>
+                <div class="input-group">
+                    <label>Имя для отображения</label>
+                    <input type="text" id="register-displayname" placeholder="Как вас называть?">
+                </div>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" id="register-password" placeholder="Придумайте пароль">
+                </div>
+                <button class="btn btn-primary" onclick="doRegister()">Создать аккаунт</button>
+                <div class="auth-switch">
+                    Уже есть аккаунт? <a onclick="showLogin()">Войти</a>
+                </div>
             </div>
             <div id="auto-login-loading" style="display:none;text-align:center">
                 <div style="font-size:3rem;margin-bottom:1rem;animation:spin 1s linear infinite">⚡</div>
@@ -1138,6 +1161,20 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function showLogin() {
+    document.getElementById('login-form').style.display = 'block';
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('auto-login-loading').style.display = 'none';
+    playSound('click');
+}
+
+function showRegister() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'block';
+    document.getElementById('auto-login-loading').style.display = 'none';
+    playSound('click');
+}
+
 function doAutoLogin() {
     const username = document.getElementById('login-username').value.trim();
     if (!username) return notify('Введите имя', 'error');
@@ -1145,6 +1182,25 @@ function doAutoLogin() {
     
     // Проверяем существование пользователя
     socket.emit('check_user_exists', username);
+}
+
+function doRegister() {
+    const username = document.getElementById('register-username').value.trim();
+    const displayName = document.getElementById('register-displayname').value.trim();
+    const password = document.getElementById('register-password').value.trim();
+    
+    if (!username) return notify('Введите логин', 'error');
+    if (username.length < 3) return notify('Логин минимум 3 символа', 'error');
+    if (!displayName) return notify('Введите имя для отображения', 'error');
+    if (!password) return notify('Введите пароль', 'error');
+    if (password.length < 4) return notify('Пароль минимум 4 символа', 'error');
+    
+    // Отправляем регистрацию
+    socket.emit('register', { username, password, displayName });
+    
+    // Сохраняем для автовхода
+    localStorage.setItem('xgram_username', username);
+    localStorage.setItem('xgram_password', password);
 }
 
 // Обработка проверки существования пользователя
@@ -1197,6 +1253,7 @@ socket.on('login_success', (data) => {
 socket.on('login_error', (msg) => {
     // Если автологин не удался - показываем форму входа
     document.getElementById('login-form').style.display = 'block';
+    document.getElementById('register-form').style.display = 'none';
     document.getElementById('auto-login-loading').style.display = 'none';
     document.getElementById('auth-screen').style.display = 'flex';
     
@@ -1206,8 +1263,24 @@ socket.on('login_error', (msg) => {
     
     notify(msg, 'error');
 });
-socket.on('register_success', () => { notify('Аккаунт создан!', 'success'); showLogin(); });
-socket.on('register_error', (msg) => notify(msg, 'error'));
+socket.on('register_success', () => { 
+    notify('Аккаунт создан! Входим...', 'success'); 
+    playSound('success');
+    // Автоматически входим после регистрации
+    const username = localStorage.getItem('xgram_username');
+    const password = localStorage.getItem('xgram_password');
+    if (username && password) {
+        setTimeout(() => {
+            socket.emit('login', { username, password });
+        }, 500);
+    }
+});
+socket.on('register_error', (msg) => {
+    notify(msg, 'error');
+    // Очищаем сохранённые данные
+    localStorage.removeItem('xgram_username');
+    localStorage.removeItem('xgram_password');
+});
 socket.on('you_are_banned', () => { notify('Ваш аккаунт заблокирован', 'error'); logout(); });
 socket.on('you_are_muted', () => notify('Вы были замьючены', 'error'));
 socket.on('you_are_unmuted', () => notify('Вас размьютили', 'success'));
@@ -2131,6 +2204,9 @@ document.addEventListener('keydown', (e) => {
 
 // ===================== ENTER TO LOGIN =====================
 document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doAutoLogin(); });
+document.getElementById('register-username')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+document.getElementById('register-displayname')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+document.getElementById('register-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
 </script>
 </body>
 </html>
