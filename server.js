@@ -221,7 +221,12 @@ io.on('connection', (socket) => {
         
         // Отправляем заявки в друзья
         if (db.friendRequests[username]) {
-            socket.emit('friend_requests', db.friendRequests[username]);
+            const requests = db.friendRequests[username].map(reqUsername => ({
+                username: reqUsername,
+                displayName: db.users[reqUsername]?.displayName || reqUsername,
+                avatar: db.users[reqUsername]?.avatar
+            }));
+            socket.emit('friend_requests', requests);
         }
     });
 
@@ -1211,25 +1216,26 @@ io.on('connection', (socket) => {
 
     // Заявка в друзья
     socket.on('send_friend_request', (toUser) => {
-        if (!currentUser || !db.users[toUser]) return;
-        if (db.users[currentUser].friends.includes(toUser)) return;
+        if (!currentUser || !db.users[toUser]) return socket.emit('request_error', 'Пользователь не найден');
+        if (toUser === currentUser) return socket.emit('request_error', 'Нельзя добавить себя');
+        if (db.users[currentUser].friends.includes(toUser)) return socket.emit('request_error', 'Уже в друзьях');
         
         if (!db.friendRequests[toUser]) db.friendRequests[toUser] = [];
-        if (!db.friendRequests[toUser].includes(currentUser)) {
-            db.friendRequests[toUser].push(currentUser);
-            saveDB();
-            
-            io.to(toUser).emit('new_friend_request', {
-                username: currentUser,
-                displayName: db.users[currentUser].displayName,
-                avatar: db.users[currentUser].avatar
-            });
-        }
+        if (db.friendRequests[toUser].includes(currentUser)) return socket.emit('request_error', 'Заявка уже отправлена');
+        
+        db.friendRequests[toUser].push(currentUser);
+        saveDB();
+        
+        io.to(toUser).emit('new_friend_request', {
+            username: currentUser,
+            displayName: db.users[currentUser].displayName,
+            avatar: db.users[currentUser].avatar
+        });
         socket.emit('friend_request_sent');
     });
 
     // Принять заявку
-    socket.on('accept_friend', (fromUser) => {
+    socket.on('accept_friend_request', (fromUser) => {
         if (!currentUser || !db.users[fromUser]) return;
         
         if (!db.users[currentUser].friends.includes(fromUser)) {

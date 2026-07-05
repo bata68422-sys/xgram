@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Тест</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .btn { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        a { color: blue; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Тест кнопок</h1>
+    <button class="btn" onclick="test1()">Кнопка 1</button>
+    <br>
+    <a onclick="test2()">Ссылка Зарегистрироваться</a>
+    
+    <div id="result"></div>
+    
+    <script>
+        function test1() {
+            document.getElementById('result').innerHTML = 'Кнопка 1 работает!';
+        }
+        
+        function test2() {
+            document.getElementById('result').innerHTML = 'Ссылка работает!';
+        }
+    </script>
+</body>
+</html>

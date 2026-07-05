@@ -1075,11 +1075,11 @@
     <div class="modal">
         <div class="modal-title">➕ Добавить друга</div>
         <div class="input-group">
-            <label>Логин пользователя</label>
-            <input type="text" id="friend-username-input" placeholder="Введите логин">
+            <label>Поиск пользователя</label>
+            <input type="text" id="friend-search-input" placeholder="Введите имя или логин" oninput="searchUsers()">
         </div>
-        <button class="btn btn-primary" onclick="sendFriendRequest()">Отправить заявку</button>
-        <button class="btn btn-secondary" onclick="closeModal('add-friend-modal')">Закрыть</button>
+        <div id="search-results" style="max-height:300px;overflow-y:auto;margin-top:1rem"></div>
+        <button class="btn btn-secondary" onclick="closeModal('add-friend-modal')" style="margin-top:1rem">Закрыть</button>
     </div>
 </div>
 
@@ -1442,8 +1442,30 @@ function renderFriendsList() {
     if (!list) return;
     list.innerHTML = `
         <div style="padding:0.8rem;display:flex;gap:0.5rem">
-            <button class="btn btn-primary" style="flex:1;padding:0.6rem" onclick="showModal('add-friend-modal')">+ Добавить</button>
+            <button class="btn btn-primary" style="flex:1;padding:0.6rem" onclick="showAddFriendModal()">+ Добавить друга</button>
         </div>`;
+    
+    // Показываем заявки в друзья
+    if (currentUser && currentUser.pendingRequests && currentUser.pendingRequests.length > 0) {
+        list.innerHTML += '<div style="padding:0.8rem;font-weight:600;color:var(--accent)">📩 Заявки в друзья (' + currentUser.pendingRequests.length + ')</div>';
+        currentUser.pendingRequests.forEach(req => {
+            const div = document.createElement('div');
+            div.className = 'friend-item';
+            div.style.background = 'var(--surface2)';
+            div.innerHTML = `
+                <div class="avatar" style="width:36px;height:36px;font-size:0.85rem">${req.displayName[0].toUpperCase()}</div>
+                <div>
+                    <div style="font-weight:600">${req.displayName}</div>
+                    <div style="font-size:0.8rem;color:var(--text-dim)">@${req.username}</div>
+                </div>
+                <div class="friend-item-actions">
+                    <button class="small-btn success" onclick="acceptFriendRequest('${req.username}')">✓ Принять</button>
+                    <button class="small-btn danger" onclick="rejectFriendRequest('${req.username}')">✕ Отклонить</button>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+    
     if (friends.length === 0) {
         list.innerHTML += '<div style="padding:1rem;color:var(--text-dim);text-align:center">Нет друзей</div>';
     }
@@ -1464,6 +1486,60 @@ function renderFriendsList() {
     });
 }
 
+function showAddFriendModal() {
+    document.getElementById('friend-search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
+    showModal('add-friend-modal');
+}
+
+function searchUsers() {
+    const query = document.getElementById('friend-search-input').value.trim();
+    if (query.length < 2) {
+        document.getElementById('search-results').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:1rem">Введите минимум 2 символа</div>';
+        return;
+    }
+    socket.emit('search_users', query);
+}
+
+socket.on('search_results', (results) => {
+    const container = document.getElementById('search-results');
+    if (!container) return;
+    
+    if (results.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:1rem">Пользователи не найдены</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    results.forEach(user => {
+        const div = document.createElement('div');
+        div.className = 'friend-item';
+        div.style.marginBottom = '0.5rem';
+        const isFriend = friends.find(f => f.username === user.username);
+        div.innerHTML = `
+            <div class="avatar" style="width:36px;height:36px;font-size:0.85rem">${user.displayName[0].toUpperCase()}</div>
+            <div style="flex:1">
+                <div style="font-weight:600">${user.displayName}</div>
+                <div style="font-size:0.8rem;color:var(--text-dim)">@${user.username} ${user.online ? '🟢' : '⚫'}</div>
+            </div>
+            ${isFriend ? '<span style="color:var(--success)">✓ Уже друзья</span>' : 
+              `<button class="small-btn primary" onclick="sendFriendRequestTo('${user.username}')">+ Добавить</button>`}`;
+        container.appendChild(div);
+    });
+});
+
+function sendFriendRequestTo(username) {
+    socket.emit('send_friend_request', username);
+}
+
+function acceptFriendRequest(username) {
+    socket.emit('accept_friend_request', username);
+}
+
+function rejectFriendRequest(username) {
+    socket.emit('reject_friend_request', username);
+}
+
 function sendFriendRequest() {
     const u = document.getElementById('friend-username-input').value.trim();
     if (!u) return notify('Введите логин', 'error');
@@ -1477,12 +1553,24 @@ function removeFriend(username) {
 
 socket.on('friend_requests', (requests) => {
     if (!requests || requests.length === 0) return;
-    requests.forEach(req => {
-        notify(`👤 ${req} хочет добавить вас в друзья`, 'success');
-    });
+    if (!currentUser) currentUser = {};
+    currentUser.pendingRequests = requests.map(username => ({
+        username: username,
+        displayName: username
+    }));
+    renderFriendsList();
 });
-socket.on('new_friend_request', (from) => {
-    notify(`👤 ${from} хочет добавить вас в друзья — <a onclick="acceptFriendReq('${from}')" style="cursor:pointer;text-decoration:underline">Принять</a>`, 'success');
+socket.on('new_friend_request', (data) => {
+    if (!currentUser) currentUser = {};
+    if (!currentUser.pendingRequests) currentUser.pendingRequests = [];
+    currentUser.pendingRequests.push(data);
+    renderFriendsList();
+    notify(`👤 ${data.displayName} хочет добавить вас в друзья`, 'success');
+});
+socket.on('friend_request_sent', () => {
+    notify('Заявка отправлена', 'success');
+    document.getElementById('friend-search-input').value = '';
+    searchUsers();
 });
 socket.on('friend_request_accepted', (data) => {
     friends.push(data);
@@ -1492,8 +1580,13 @@ socket.on('friend_request_accepted', (data) => {
 });
 socket.on('friend_added', (data) => {
     friends.push(data);
+    // Удаляем из заявок
+    if (currentUser && currentUser.pendingRequests) {
+        currentUser.pendingRequests = currentUser.pendingRequests.filter(r => r.username !== data.username);
+    }
     renderFriendsList();
     renderChatList();
+    notify(`✅ ${data.displayName || data.username} теперь ваш друг`, 'success');
 });
 socket.on('friend_removed', (username) => {
     friends = friends.filter(f => f.username !== username);
