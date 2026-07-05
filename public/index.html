@@ -466,11 +466,13 @@
             position: fixed;
             inset: 0;
             background: rgba(10,10,15,0.97);
+            backdrop-filter: blur(20px);
             z-index: 200;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 2rem;
+            animation: fadeIn 0.3s ease;
         }
         #call-screen.active { display: flex; }
         .call-avatar {
@@ -561,6 +563,49 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        
+        /* Premium fonts */
+        .font-gradient {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+        .font-glow {
+            text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+            font-weight: 600;
+        }
+        .font-neon {
+            color: var(--accent2);
+            text-shadow: 0 0 5px var(--accent2), 0 0 10px var(--accent2), 0 0 15px var(--accent2);
+            font-weight: 600;
+        }
+        .font-rainbow {
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s linear infinite;
+            background-size: 200% 100%;
+            font-weight: 700;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        .font-bold { font-weight: 800; }
+        .font-italic { font-style: italic; font-weight: 600; }
+        
+        /* Premium badge */
+        .premium-badge {
+            display: inline-block;
+            background: var(--premium);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 0.3rem;
+        }
         /* Group/Channel badges */
         .badge {
             background: var(--accent);
@@ -715,9 +760,25 @@
         <div class="sidebar-header">
             <span class="logo">XGram</span>
             <div style="display:flex;gap:0.4rem;align-items:center">
-                <button class="icon-btn" onclick="showProfile()" title="Профиль">👤</button>
-                <button class="icon-btn" onclick="showSettings()" title="Настройки">⚙️</button>
-                <button class="icon-btn" onclick="showShop()" title="Магазин">🛒</button>
+                <button class="icon-btn" onclick="showProfile()" title="Профиль">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </button>
+                <button class="icon-btn" onclick="showSettings()" title="Настройки">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m16.7-4.3l-4.2 4.2m-7 0L4.3 4.3m15.4 15.4l-4.2-4.2m-7 0L4.3 19.7"></path>
+                    </svg>
+                </button>
+                <button class="icon-btn" onclick="showShop()" title="Магазин">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </button>
             </div>
         </div>
         <div class="tabs">
@@ -810,13 +871,21 @@
         <div class="input-group">
             <label>Выбор темы</label>
             <div class="theme-row">
-                <div class="theme-dot active" style="background:#3a6ff8" onclick="setTheme('#3a6ff8','#22d3ee')" title="Синяя"></div>
-                <div class="theme-dot" style="background:#a855f7" onclick="setTheme('#a855f7','#c084fc')" title="Фиолетовая"></div>
-                <div class="theme-dot" style="background:#22d3ee" onclick="setTheme('#22d3ee','#06b6d4')" title="Циановая"></div>
-                <div class="theme-dot" style="background:#00d084" onclick="setTheme('#00d084','#10b981')" title="Зелёная"></div>
-                <div class="theme-dot" style="background:#ff6b35" onclick="setTheme('#ff6b35','#f97316')" title="Оранжевая"></div>
-                <div class="theme-dot" style="background:#ff4081" onclick="setTheme('#ff4081','#ec4899')" title="Розовая"></div>
+                <div class="theme-dot active" style="background:linear-gradient(135deg,#3a6ff8,#22d3ee)" onclick="setTheme('#3a6ff8','#22d3ee')" title="Синяя"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#a855f7,#c084fc)" onclick="setTheme('#a855f7','#c084fc')" title="Фиолетовая"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)" onclick="setTheme('#22d3ee','#06b6d4')" title="Циановая"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#00d084,#10b981)" onclick="setTheme('#00d084','#10b981')" title="Зелёная"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#ff6b35,#f97316)" onclick="setTheme('#ff6b35','#f97316')" title="Оранжевая"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#ff4081,#ec4899)" onclick="setTheme('#ff4081','#ec4899')" title="Розовая"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" onclick="setTheme('#fbbf24','#f59e0b')" title="Золотая"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#ef4444,#dc2626)" onclick="setTheme('#ef4444','#dc2626')" title="Красная"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)" onclick="setTheme('#8b5cf6','#7c3aed')" title="Индиго"></div>
+                <div class="theme-dot" style="background:linear-gradient(135deg,#14b8a6,#0d9488)" onclick="setTheme('#14b8a6','#0d9488')" title="Бирюзовая"></div>
             </div>
+        </div>
+        <div class="input-group">
+            <label>🌟 Премиум функции <span id="premium-badge" style="font-size:0.8rem;color:var(--text-dim)"></span></label>
+            <div id="premium-section"></div>
         </div>
         <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:1rem">Сохранить</button>
         <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Закрыть</button>
@@ -980,12 +1049,14 @@ function renderChatList() {
         const item = document.createElement('div');
         item.className = 'chat-item' + (currentChat?.id === f.username ? ' active' : '');
         const lastMsg = getLastMessage(f.username);
+        const nickClass = f.nickFont || '';
+        const premiumBadge = f.premium ? '<span class="premium-badge">★</span>' : '';
         item.innerHTML = `
             <div class="avatar" style="${f.avatar ? 'background:url(' + f.avatar + ') center/cover no-repeat' : ''}">
                 ${f.avatar ? '' : (f.displayName || f.username)[0].toUpperCase()}
             </div>
             <div class="chat-info">
-                <div class="chat-name">${f.displayName || f.username}</div>
+                <div class="chat-name"><span class="${nickClass}">${f.displayName || f.username}</span>${premiumBadge}</div>
                 <div class="user-status">
                     <div class="online-dot" style="background:${f.online ? 'var(--success)' : 'var(--border)'}"></div>
                     <span class="chat-preview">${lastMsg}</span>
@@ -1331,6 +1402,38 @@ function showSettings() {
     document.getElementById('settings-display-name').value = currentUser.displayName || '';
     document.getElementById('settings-status').value = currentUser.status || '';
     document.getElementById('settings-avatar').value = currentUser.avatar || '';
+    
+    // Показываем премиум секцию
+    const premiumSection = document.getElementById('premium-section');
+    const premiumBadge = document.getElementById('premium-badge');
+    
+    if (currentUser.premium) {
+        premiumBadge.innerHTML = '<span class="premium-badge">PREMIUM</span>';
+        premiumSection.innerHTML = `
+            <div style="margin-bottom:0.8rem">
+                <label style="font-size:0.85rem;margin-bottom:0.5rem;display:block">Стиль ника</label>
+                <select id="nick-font" style="width:100%;padding:0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text)">
+                    <option value="">Обычный</option>
+                    <option value="font-gradient">Градиент</option>
+                    <option value="font-glow">Свечение</option>
+                    <option value="font-neon">Неон</option>
+                    <option value="font-rainbow">Радуга</option>
+                    <option value="font-bold">Жирный</option>
+                    <option value="font-italic">Курсив</option>
+                </select>
+            </div>`;
+        document.getElementById('nick-font').value = currentUser.nickFont || '';
+    } else {
+        premiumBadge.textContent = '(Недоступно)';
+        premiumSection.innerHTML = `
+            <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.8rem">
+                Получите премиум для кастомизации ника с градиентами и эффектами!
+            </p>
+            <button class="btn btn-primary" onclick="buyPremium()" style="padding:0.6rem;font-size:0.85rem">
+                Купить Premium за 500 🐱
+            </button>`;
+    }
+    
     showModal('settings-modal');
 }
 
@@ -1338,12 +1441,17 @@ function saveSettings() {
     const displayName = document.getElementById('settings-display-name').value.trim();
     const status = document.getElementById('settings-status').value.trim();
     const avatar = document.getElementById('settings-avatar').value.trim();
-    socket.emit('update_profile', { displayName, status, avatar });
+    const nickFont = document.getElementById('nick-font') ? document.getElementById('nick-font').value : '';
+    
+    socket.emit('update_profile', { displayName, status, avatar, nickFont });
     if (displayName) currentUser.displayName = displayName;
     if (status) currentUser.status = status;
     if (avatar !== undefined) currentUser.avatar = avatar;
+    if (nickFont !== undefined) currentUser.nickFont = nickFont;
     notify('Настройки сохранены', 'success');
     closeModal('settings-modal');
+    renderChatList();
+    renderFriendsList();
 }
 
 // ===================== SHOP =====================
@@ -1429,6 +1537,25 @@ function sellGift(i) {
 function sellNft(i) {
     socket.emit('sell_nft', i);
 }
+
+function buyPremium() {
+    if (!currentUser) return;
+    if (currentUser.coins < 500) {
+        return notify('Недостаточно котиков! Нужно 500 🐱', 'error');
+    }
+    if (confirm('Купить Premium за 500 🐱?')) {
+        socket.emit('buy_premium');
+    }
+}
+
+socket.on('premium_activated', (data) => {
+    notify('🌟 Premium активирован!', 'success');
+    currentUser.premium = true;
+    currentUser.coins = data.newBalance;
+    const shopCoins = document.getElementById('shop-coins');
+    if (shopCoins) shopCoins.textContent = '🐱 ' + data.newBalance;
+    closeModal('settings-modal');
+});
 
 socket.on('purchase_success', (data) => {
     notify('✅ Куплено: ' + (data.item.name || data.item.id), 'success');

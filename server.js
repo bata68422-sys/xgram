@@ -414,6 +414,26 @@ io.on('connection', (socket) => {
         socket.emit('purchase_success', { type: 'nft', item: nft, newBalance: user.coins });
     });
 
+    // Покупка премиума
+    socket.on('buy_premium', () => {
+        if (!currentUser) return;
+        const user = db.users[currentUser];
+        
+        if (user.premium) {
+            return socket.emit('shop_error', 'У вас уже есть Premium!');
+        }
+        
+        if (user.coins < 500) {
+            return socket.emit('shop_error', 'Недостаточно котиков! Нужно 500 🐱');
+        }
+        
+        user.coins -= 500;
+        user.premium = true;
+        saveDB();
+        
+        socket.emit('premium_activated', { newBalance: user.coins });
+    });
+
     socket.on('send_gift', ({ to, giftId }) => {
         if (!currentUser || !db.users[to]) return;
         const user = db.users[currentUser];
