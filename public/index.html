@@ -32,7 +32,30 @@
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
-        .app { display: flex; height: 100vh; }
+        
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(58, 111, 248, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(34, 211, 238, 0.1) 0%, transparent 50%);
+            animation: bgShift 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes bgShift {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        
+        .app { 
+            display: flex; 
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
         
         /* Auth Screen */
         #auth-screen {
@@ -160,17 +183,40 @@
             width: 100%;
             padding: 0.95rem;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-weight: 600;
             font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .btn:hover::before {
+            transform: translateX(100%);
+        }
+        .btn:active {
+            transform: scale(0.98);
         }
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
+            box-shadow: 0 4px 15px rgba(58, 111, 248, 0.3);
         }
-        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(58, 111, 248, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+        }
         .btn-secondary {
             background: var(--surface);
             color: var(--text);
@@ -194,11 +240,24 @@
         /* Main App */
         #main-app { display: none; width: 100%; }
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: var(--surface);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            backdrop-filter: blur(20px);
+            animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes slideInLeft {
+            from { 
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
         .sidebar-header {
             padding: 1rem;
@@ -289,6 +348,13 @@
             display: flex;
             flex-direction: column;
             background: var(--bg);
+            animation: fadeIn 0.6s ease;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .chat-header {
             padding: 1rem 1.5rem;
@@ -404,6 +470,26 @@
             background: var(--success);
             border-radius: 50%;
             border: 2px solid var(--surface);
+            position: relative;
+        }
+        .online-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: var(--success);
+            opacity: 0;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
         }
         .user-status {
             display: flex;
@@ -421,18 +507,39 @@
             z-index: 100;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(10px);
+            animation: overlayFadeIn 0.3s ease;
         }
+        
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
         .modal-overlay.active { display: flex; }
+        
         .modal {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: var(--radius);
             padding: 2rem;
             width: 90%;
             max-width: 480px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         .modal-title {
             font-family: 'Manrope', sans-serif;
@@ -536,21 +643,29 @@
             right: 2rem;
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius);
             padding: 1rem 1.5rem;
             z-index: 300;
             opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s;
-            max-width: 300px;
+            transform: translateY(20px) translateX(100px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 350px;
             font-size: 0.9rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
         }
         .notification.show {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) translateX(0);
         }
-        .notification.success { border-color: var(--success); }
-        .notification.error { border-color: var(--danger); }
+        .notification.success { 
+            border-color: var(--success);
+            background: linear-gradient(135deg, var(--surface), var(--surface2));
+        }
+        .notification.error { 
+            border-color: var(--danger);
+            background: linear-gradient(135deg, var(--surface), var(--surface2));
+        }
         /* Empty state */
         .empty-state {
             flex: 1;
@@ -560,9 +675,22 @@
             justify-content: center;
             gap: 1rem;
             color: var(--text-dim);
+            animation: fadeIn 0.8s ease;
         }
-        .empty-icon { font-size: 4rem; opacity: 0.3; }
-        .empty-text { font-size: 1.1rem; font-weight: 500; }
+        .empty-icon { 
+            font-size: 4rem; 
+            opacity: 0.3;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .empty-text { 
+            font-size: 1.1rem; 
+            font-weight: 500;
+            animation: fadeIn 1s ease 0.3s backwards;
+        }
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -925,7 +1053,15 @@
             <label>Название группы</label>
             <input type="text" id="group-name-input" placeholder="Название">
         </div>
-        <button class="btn btn-primary" onclick="createGroup()">Создать</button>
+        <div class="input-group">
+            <label>Аватар группы (эмодзи или URL)</label>
+            <input type="text" id="group-avatar-input" placeholder="🎉 или https://...">
+        </div>
+        <div class="input-group">
+            <label>Добавить друзей</label>
+            <div id="group-friends-list" style="max-height:200px;overflow-y:auto;background:var(--surface2);border-radius:var(--radius-sm);padding:0.5rem"></div>
+        </div>
+        <button class="btn btn-primary" onclick="createGroup()">Создать группу</button>
         <button class="btn btn-secondary" onclick="closeModal('group-modal')">Закрыть</button>
     </div>
 </div>
@@ -1257,32 +1393,78 @@ function renderGroupsList() {
     if (!list) return;
     list.innerHTML = `
         <div style="padding:0.8rem;display:flex;gap:0.5rem">
-            <button class="btn btn-primary" style="flex:1;padding:0.6rem" onclick="showModal('group-modal')">+ Создать</button>
+            <button class="btn btn-primary" style="flex:1;padding:0.6rem" onclick="openGroupModal()">+ Создать группу</button>
         </div>`;
     if (groups.length === 0) {
-        list.innerHTML += '<div style="padding:1rem;color:var(--text-dim);text-align:center">Нет групп</div>';
+        list.innerHTML += '<div style="padding:1rem;color:var(--text-dim);text-align:center">Нет групп. Создайте первую!</div>';
         return;
     }
     groups.forEach(g => {
         const div = document.createElement('div');
         div.className = 'chat-item' + (currentChat?.id === g.id ? ' active' : '');
+        const avatar = g.avatar || '👥';
         div.innerHTML = `
-            <div class="avatar" style="background:var(--accent2)">${g.name[0].toUpperCase()}</div>
+            <div class="avatar" style="background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:1.5rem">${avatar}</div>
             <div class="chat-info">
                 <div class="chat-name">${g.name}</div>
                 <div class="chat-preview">${g.membersCount || g.members?.length || 0} участников</div>
             </div>`;
-        div.onclick = () => openChat('group', g.id, g.name);
+        div.onclick = () => { openChat('group', g.id, g.name); playSound('click'); };
         list.appendChild(div);
     });
 }
 
+function openGroupModal() {
+    // Показываем список друзей для добавления
+    const friendsList = document.getElementById('group-friends-list');
+    if (!friends || friends.length === 0) {
+        friendsList.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-dim)">Добавьте друзей, чтобы создать группу</div>';
+    } else {
+        friendsList.innerHTML = friends.map((f, i) => `
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-radius:var(--radius-sm);cursor:pointer;transition:all 0.2s" 
+                 class="friend-select-item" 
+                 onmouseover="this.style.background='var(--surface)'"
+                 onmouseout="this.style.background='transparent'"
+                 onclick="toggleFriendSelect(${i}, this)">
+                <input type="checkbox" id="friend-check-${i}" style="cursor:pointer">
+                <div class="avatar" style="width:32px;height:32px;font-size:0.9rem">${(f.displayName || f.username)[0].toUpperCase()}</div>
+                <div style="flex:1">
+                    <div style="font-weight:500;font-size:0.9rem">${f.displayName || f.username}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+    document.getElementById('group-name-input').value = '';
+    document.getElementById('group-avatar-input').value = '';
+    showModal('group-modal');
+    playSound('open');
+}
+
+function toggleFriendSelect(index, element) {
+    const checkbox = document.getElementById(`friend-check-${index}`);
+    checkbox.checked = !checkbox.checked;
+}
+
 function createGroup() {
     const name = document.getElementById('group-name-input').value.trim();
-    if (!name) return notify('Введите название', 'error');
-    socket.emit('create_group', { name });
+    const avatar = document.getElementById('group-avatar-input').value.trim() || '👥';
+    
+    if (!name) return notify('Введите название группы', 'error');
+    
+    // Собираем выбранных друзей
+    const selectedFriends = [];
+    friends.forEach((f, i) => {
+        const checkbox = document.getElementById(`friend-check-${i}`);
+        if (checkbox && checkbox.checked) {
+            selectedFriends.push(f.username);
+        }
+    });
+    
+    socket.emit('create_group', { name, avatar, members: selectedFriends });
     document.getElementById('group-name-input').value = '';
+    document.getElementById('group-avatar-input').value = '';
     closeModal('group-modal');
+    playSound('success');
 }
 
 socket.on('my_groups', (grps) => {
@@ -1292,7 +1474,15 @@ socket.on('my_groups', (grps) => {
 socket.on('group_created', (g) => {
     groups.push(g);
     renderGroupsList();
-    notify('Группа создана!', 'success');
+    notify(`Группа "${g.name}" создана!`, 'success');
+    playSound('success');
+});
+
+socket.on('added_to_group', (data) => {
+    groups.push(data.group);
+    renderGroupsList();
+    notify(`${data.addedBy} добавил вас в группу "${data.group.name}"`, 'success');
+    playSound('success');
 });
 socket.on('all_groups', (grps) => {
     const list = document.getElementById('groups-list');

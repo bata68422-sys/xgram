@@ -791,25 +791,47 @@ io.on('connection', (socket) => {
     });
 
     // ===== ГРУППЫ =====
-    socket.on('create_group', ({ name, avatar }) => {
+    socket.on('create_group', ({ name, avatar, members }) => {
         if (!currentUser) return;
         
         const groupId = 'group_' + Date.now();
+        const groupMembers = [currentUser];
+        
+        // Добавляем выбранных друзей
+        if (members && Array.isArray(members)) {
+            members.forEach(member => {
+                if (db.users[member] && !groupMembers.includes(member)) {
+                    groupMembers.push(member);
+                }
+            });
+        }
+        
         db.groups[groupId] = {
             id: groupId,
             name,
-            avatar,
+            avatar: avatar || '👥',
             owner: currentUser,
             admins: [currentUser],
-            members: [currentUser],
+            members: groupMembers,
             messages: [],
-            isPublic: true, // Все группы публичные
+            isPublic: true,
             createdAt: Date.now()
         };
         saveDB();
         
+        // Присоединяем создателя
         socket.join(groupId);
         socket.emit('group_created', db.groups[groupId]);
+        
+        // Уведомляем добавленных участников
+        groupMembers.forEach(member => {
+            if (member !== currentUser) {
+                io.to(member).emit('added_to_group', {
+                    group: db.groups[groupId],
+                    addedBy: db.users[currentUser].displayName || currentUser
+                });
+            }
+        });
     });
 
     socket.on('get_my_groups', () => {
