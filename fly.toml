@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for xgram on 2026-07-20T16:42:59Z
+# fly.toml app configuration file generated for xgram on 2026-07-20T16:50:04Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'xgram'
-primary_region = 'iad'
+primary_region = 'ams'
 
 [build]
 
